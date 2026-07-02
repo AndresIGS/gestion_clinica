@@ -66,6 +66,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       // Enviar credenciales Y metadatos.
+      print(
+        "Datos enviados: nombre_completo: $nombreCompleto, id_rol: $idRol, telefono: $telefono",
+      );
       // El Trigger en SQL capturará la 'data' y llenará la tabla pública automáticamente.
       await supabaseClient.auth.signUp(
         email: correo,
