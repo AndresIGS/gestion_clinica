@@ -76,6 +76,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           'telefono': telefono,
           if (idEspecialidad != null) 'id_especialidad': idEspecialidad,
           // --- ENVÍO DE DATOS A SUPABASE ---
+          // En auth_remote_data_source.dart
           if (matriculaMedica != null) 'matricula_medica': matriculaMedica,
           if (fechaNacimiento != null) 'fecha_nacimiento': fechaNacimiento,
         },
