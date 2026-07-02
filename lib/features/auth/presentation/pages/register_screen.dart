@@ -20,6 +20,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _passwordController = TextEditingController();
   final _nombreController = TextEditingController();
   final _telefonoController = TextEditingController();
+
+  // --- NUEVOS CONTROLADORES ---
+  final _matriculaController = TextEditingController();
+  final _fechaNacimientoController = TextEditingController();
+
   int _rolSeleccionado = 4; // Por defecto: 4 (Paciente)
   int? _especialidadSeleccionada;
 
@@ -29,7 +34,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _passwordController.dispose();
     _nombreController.dispose();
     _telefonoController.dispose();
+    _matriculaController.dispose();
+    _fechaNacimientoController.dispose();
     super.dispose();
+  }
+
+  // Método para mostrar el calendario
+  Future<void> _seleccionarFecha(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime(2000), // Fecha por defecto al abrir
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() {
+        // Formateamos a YYYY-MM-DD para que PostgreSQL lo acepte sin problemas
+        _fechaNacimientoController.text =
+            "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
+      });
+    }
   }
 
   void _registrar() {
@@ -51,6 +75,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
           idRol: _rolSeleccionado,
           telefono: _telefonoController.text.trim(),
           idEspecialidad: _especialidadSeleccionada,
+          // Enviamos los nuevos datos según el rol
+          matriculaMedica: _rolSeleccionado == 3
+              ? _matriculaController.text.trim()
+              : null,
+          fechaNacimiento: _rolSeleccionado == 4
+              ? _fechaNacimientoController.text.trim()
+              : null,
         ),
       );
     }
@@ -75,7 +106,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     );
                   } else if (state is AuthAuthenticated) {
-                    // Validamos que esta pantalla sea la visible antes de navegar
                     if (ModalRoute.of(context)?.isCurrent == true) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
@@ -84,7 +114,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       );
 
-                      // En lugar de hacer pop, vamos directo al Dashboard
                       Navigator.pushAndRemoveUntil(
                         context,
                         MaterialPageRoute(
@@ -135,7 +164,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   v!.length < 6 ? 'Mínimo 6 caracteres' : null,
                             ),
                             const SizedBox(height: 16),
-                            // --- CAMPO DE TELÉFONO (Para todos) ---
                             TextFormField(
                               controller: _telefonoController,
                               keyboardType: TextInputType.phone,
@@ -170,22 +198,68 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               onChanged: (value) {
                                 setState(() {
                                   _rolSeleccionado = value!;
-                                  if (_rolSeleccionado != 3)
+                                  // Limpiamos los datos del otro rol para evitar cruces
+                                  if (_rolSeleccionado != 3) {
                                     _especialidadSeleccionada = null;
+                                    _matriculaController.clear();
+                                  }
+                                  if (_rolSeleccionado != 4) {
+                                    _fechaNacimientoController.clear();
+                                  }
                                 });
                               },
                             ),
                             const SizedBox(height: 16),
 
-                            // --- DATOS HEREDADOS (DINÁMICO) ---
-                            if (_rolSeleccionado == 3)
+                            // ==========================================
+                            // --- CAMPOS DINÁMICOS SEGÚN EL ROL ---
+                            // ==========================================
+
+                            // 1. SI ES PACIENTE (Rol 4): Pedir Fecha de Nacimiento
+                            if (_rolSeleccionado == 4) ...[
+                              TextFormField(
+                                controller: _fechaNacimientoController,
+                                readOnly:
+                                    true, // Evita que se escriba con el teclado
+                                onTap: () => _seleccionarFecha(context),
+                                decoration: const InputDecoration(
+                                  labelText: 'Fecha de Nacimiento',
+                                  prefixIcon: Icon(Icons.calendar_today),
+                                  border: OutlineInputBorder(),
+                                  hintText: 'YYYY-MM-DD',
+                                ),
+                                validator: (value) => value!.isEmpty
+                                    ? 'Selecciona tu fecha de nacimiento'
+                                    : null,
+                              ),
+                            ],
+
+                            // 2. SI ES MÉDICO (Rol 3): Pedir Matrícula y Especialidad
+                            if (_rolSeleccionado == 3) ...[
+                              TextFormField(
+                                controller: _matriculaController,
+                                decoration: const InputDecoration(
+                                  labelText: 'Matrícula Médica',
+                                  prefixIcon: Icon(
+                                    Icons.assignment_ind_outlined,
+                                  ),
+                                  border: OutlineInputBorder(),
+                                ),
+                                validator: (value) => value!.isEmpty
+                                    ? 'Ingresa tu matrícula'
+                                    : null,
+                              ),
+                              const SizedBox(height: 16),
                               FutureBuilder<List<Map<String, dynamic>>>(
                                 future: Supabase.instance.client
                                     .from('especialidad')
                                     .select(),
                                 builder: (context, snapshot) {
-                                  if (!snapshot.hasData)
-                                    return const CircularProgressIndicator();
+                                  if (!snapshot.hasData) {
+                                    return const Center(
+                                      child: CircularProgressIndicator(),
+                                    );
+                                  }
 
                                   return DropdownButtonFormField<int>(
                                     value: _especialidadSeleccionada,
@@ -211,6 +285,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   );
                                 },
                               ),
+                            ],
+
                             const SizedBox(height: 32),
                             SizedBox(
                               height: 50,
@@ -235,7 +311,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
         ),
-      ), // <-- AQUÍ FALTABA ESTE CIERRE
+      ),
     );
   }
 }

@@ -28,6 +28,9 @@ class RegisterRequested extends AuthEvent {
   final int idRol;
   final String telefono;
   final int? idEspecialidad;
+  // --- NUEVOS CAMPOS ---
+  final String? matriculaMedica;
+  final String? fechaNacimiento;
 
   const RegisterRequested({
     required this.correo,
@@ -36,10 +39,11 @@ class RegisterRequested extends AuthEvent {
     required this.idRol,
     required this.telefono,
     this.idEspecialidad,
+    this.matriculaMedica,
+    this.fechaNacimiento,
   });
 
   @override
-  // Este ya estaba correcto, se queda igual
   List<Object?> get props => [
     correo,
     password,
@@ -47,5 +51,7 @@ class RegisterRequested extends AuthEvent {
     idRol,
     telefono,
     idEspecialidad,
+    matriculaMedica,
+    fechaNacimiento,
   ];
 }

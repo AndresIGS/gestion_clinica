@@ -11,6 +11,9 @@ abstract class AuthRemoteDataSource {
     required int idRol,
     required String telefono,
     int? idEspecialidad,
+    // --- NUEVOS CAMPOS AÑADIDOS AL CONTRATO ---
+    String? matriculaMedica,
+    String? fechaNacimiento,
   });
   Future<void> signOut();
 }
@@ -57,6 +60,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required int idRol,
     required String telefono,
     int? idEspecialidad,
+    // --- NUEVOS CAMPOS RECIBIDOS EN LA IMPLEMENTACIÓN ---
+    String? matriculaMedica,
+    String? fechaNacimiento,
   }) async {
     try {
       // Enviar credenciales Y metadatos.
@@ -69,6 +75,9 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           'id_rol': idRol,
           'telefono': telefono,
           if (idEspecialidad != null) 'id_especialidad': idEspecialidad,
+          // --- ENVÍO DE DATOS A SUPABASE ---
+          if (matriculaMedica != null) 'matricula_medica': matriculaMedica,
+          if (fechaNacimiento != null) 'fecha_nacimiento': fechaNacimiento,
         },
       );
     } catch (e) {

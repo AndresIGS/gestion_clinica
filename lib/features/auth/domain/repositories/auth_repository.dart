@@ -17,6 +17,8 @@ class AuthRepository {
     required int idRol,
     required String telefono,
     int? idEspecialidad,
+    String? matriculaMedica,
+    String? fechaNacimiento,
   }) async {
     await remoteDataSource.signUp(
       correo: correo,

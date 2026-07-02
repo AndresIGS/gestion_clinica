@@ -33,6 +33,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           idRol: event.idRol,
           telefono: event.telefono,
           idEspecialidad: event.idEspecialidad,
+          // --- NUEVOS CAMPOS AÑADIDOS AQUÍ ---
+          matriculaMedica: event.matriculaMedica,
+          fechaNacimiento: event.fechaNacimiento,
         );
 
         // 2. Si el registro fue exitoso, iniciamos sesión automáticamente
