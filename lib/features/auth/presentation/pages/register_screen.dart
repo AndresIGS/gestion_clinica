@@ -4,6 +4,7 @@ import '../blocs/auth/auth_bloc.dart';
 import '../blocs/auth/auth_event.dart';
 import '../blocs/auth/auth_state.dart';
 import 'dashboard_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -17,24 +18,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _correoController = TextEditingController();
   final _passwordController = TextEditingController();
   final _nombreController = TextEditingController();
-  int _idRolSeleccionado = 4; // Por defecto: 4 (Paciente)
+  final _telefonoController = TextEditingController();
+  int _rolSeleccionado = 4; // Por defecto: 4 (Paciente)
+  int? _especialidadSeleccionada;
 
   @override
   void dispose() {
     _correoController.dispose();
     _passwordController.dispose();
     _nombreController.dispose();
+    _telefonoController.dispose();
     super.dispose();
   }
 
   void _registrar() {
     if (_formKey.currentState!.validate()) {
+      if (_rolSeleccionado == 3 && _especialidadSeleccionada == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Por favor, selecciona una especialidad.')),
+        );
+        return;
+      }
+      
       context.read<AuthBloc>().add(
         RegisterRequested(
           correo: _correoController.text.trim(),
           password: _passwordController.text.trim(),
           nombreCompleto: _nombreController.text.trim(),
-          idRol: _idRolSeleccionado,
+          idRol: _rolSeleccionado,
+          telefono: _telefonoController.text.trim(),
+          idEspecialidad: _especialidadSeleccionada,
         ),
       );
     }
@@ -114,25 +127,65 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         validator: (v) =>
                             v!.length < 6 ? 'Mínimo 6 caracteres' : null,
                       ),
-                      const SizedBox(height: 16),
-                      DropdownButtonFormField<int>(
-                        value: _idRolSeleccionado,
+                      // --- CAMPO DE TELÉFONO (Para todos) ---
+                      TextFormField(
+                        controller: _telefonoController,
+                        keyboardType: TextInputType.phone,
                         decoration: const InputDecoration(
-                          labelText: 'Rol',
+                          labelText: 'Teléfono',
+                          prefixIcon: Icon(Icons.phone),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) => value!.isEmpty ? 'Ingresa un teléfono' : null,
+                      ),
+                      const SizedBox(height: 16),
+
+                      // --- SELECTOR DE ROL ---
+                      DropdownButtonFormField<int>(
+                        value: _rolSeleccionado,
+                        decoration: const InputDecoration(
+                          labelText: '¿Qué tipo de usuario eres?',
+                          prefixIcon: Icon(Icons.badge_outlined),
                           border: OutlineInputBorder(),
                         ),
                         items: const [
-                          DropdownMenuItem(
-                            value: 1,
-                            child: Text('Administrador'),
-                          ),
-                          DropdownMenuItem(value: 2, child: Text('Secretaria')),
-                          DropdownMenuItem(value: 3, child: Text('Médico')),
                           DropdownMenuItem(value: 4, child: Text('Paciente')),
+                          DropdownMenuItem(value: 3, child: Text('Médico')),
                         ],
-                        onChanged: (value) =>
-                            setState(() => _idRolSeleccionado = value!),
+                        onChanged: (value) {
+                          setState(() {
+                            _rolSeleccionado = value!;
+                            if (_rolSeleccionado != 3) _especialidadSeleccionada = null;
+                          });
+                        },
                       ),
+                      const SizedBox(height: 16),
+
+                      // --- DATOS HEREDADOS (DINÁMICO) ---
+                      if (_rolSeleccionado == 3)
+                        FutureBuilder<List<Map<String, dynamic>>>(
+                          future: Supabase.instance.client.from('especialidad').select(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) return const CircularProgressIndicator();
+                            
+                            return DropdownButtonFormField<int>(
+                              value: _especialidadSeleccionada,
+                              decoration: const InputDecoration(
+                                labelText: 'Selecciona tu Especialidad',
+                                prefixIcon: Icon(Icons.medical_services_outlined),
+                                border: OutlineInputBorder(),
+                              ),
+                              items: snapshot.data!.map((esp) {
+                                return DropdownMenuItem<int>(
+                                  value: esp['id_especialidad'] as int,
+                                  child: Text(esp['nombre'].toString()),
+                                );
+                              }).toList(),
+                              onChanged: (value) => setState(() => _especialidadSeleccionada = value),
+                              validator: (value) => value == null ? 'Selecciona una especialidad' : null,
+                            );
+                          },
+                        ),
                       const SizedBox(height: 32),
                       SizedBox(
                         height: 50,

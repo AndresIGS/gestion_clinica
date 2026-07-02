@@ -15,12 +15,16 @@ class AuthRepository {
     required String password,
     required String nombreCompleto,
     required int idRol,
+    required String telefono,
+    int? idEspecialidad,
   }) async {
     await remoteDataSource.signUp(
       correo: correo,
       password: password,
       nombreCompleto: nombreCompleto,
       idRol: idRol,
+      telefono: telefono,
+      idEspecialidad: idEspecialidad,
     );
   }
 

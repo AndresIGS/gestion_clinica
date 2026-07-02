@@ -43,14 +43,38 @@ class ClinicaApp extends StatelessWidget {
         title: 'Gestión Clínica',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: const Color(0xFF0D47A1),
-          ), // Azul oscuro institucional
+          // Configuramos el Morado como color principal
+          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,
+          filledButtonTheme: FilledButtonThemeData(
+            style: FilledButton.styleFrom(
+              backgroundColor: Colors.deepPurple,
+              foregroundColor: Colors.white,
+            ),
+          ),
         ),
         // Cambiamos el texto de prueba por nuestra nueva pantalla de Login
         home: const LoginScreen(),
       ),
+    );
+  }
+}
+
+class FondoWhatsApp extends StatelessWidget {
+  final Widget child;
+  const FondoWhatsApp({super.key, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        image: DecorationImage(
+          image: AssetImage('assets/images/whatsapp_bg.png'),
+          repeat: ImageRepeat.repeat, // Esto hace que el fondo se repita como en los chats
+          opacity: 0.1, // Opacidad baja para que no estorbe la lectura
+        ),
+      ),
+      child: child,
     );
   }
 }

@@ -9,6 +9,8 @@ abstract class AuthRemoteDataSource {
     required String password,
     required String nombreCompleto,
     required int idRol,
+    required String telefono,
+    int? idEspecialidad,
   });
   Future<void> signOut();
 }
@@ -53,6 +55,8 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     required String password,
     required String nombreCompleto,
     required int idRol,
+    required String telefono,
+    int? idEspecialidad,
   }) async {
     try {
       // Enviar credenciales Y metadatos.
@@ -60,7 +64,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       await supabaseClient.auth.signUp(
         email: correo,
         password: password,
-        data: {'nombre_completo': nombreCompleto, 'id_rol': idRol},
+        data: {
+          'nombre_completo': nombreCompleto,
+          'id_rol': idRol,
+          'telefono': telefono,
+          if (idEspecialidad != null) 'id_especialidad': idEspecialidad,
+        },
       );
     } catch (e) {
       throw Exception('Fallo el registro: $e');

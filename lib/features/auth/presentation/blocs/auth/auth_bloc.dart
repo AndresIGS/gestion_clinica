@@ -31,6 +31,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
           password: event.password,
           nombreCompleto: event.nombreCompleto,
           idRol: event.idRol,
+          telefono: event.telefono,
+          idEspecialidad: event.idEspecialidad,
         );
 
         // 2. Si el registro fue exitoso, iniciamos sesión automáticamente
