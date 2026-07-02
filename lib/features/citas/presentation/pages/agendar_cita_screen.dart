@@ -5,6 +5,7 @@ import '../../data/models/cita_model.dart';
 import '../blocs/citas/citas_bloc.dart';
 import '../blocs/citas/citas_event.dart';
 import '../blocs/citas/citas_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AgendarCitaScreen extends StatefulWidget {
   final UsuarioModel paciente;
@@ -18,6 +19,7 @@ class AgendarCitaScreen extends StatefulWidget {
 class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
   final _formKey = GlobalKey<FormState>();
   String? _idMedicoSeleccionado;
+  String? _idPacienteSeleccionado;
   DateTime? _fechaSeleccionada;
   TimeOfDay? _horaSeleccionada;
   final _motivoController = TextEditingController();
@@ -58,10 +60,14 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
   }
 
   void _agendarCita() {
+    final bool esSecretaria = widget.paciente.idRol == 1 || widget.paciente.idRol == 2;
+    final idPacienteFinal = esSecretaria ? _idPacienteSeleccionado : widget.paciente.idUsuario;
+
     if (_formKey.currentState!.validate() &&
         _fechaSeleccionada != null &&
         _horaSeleccionada != null &&
-        _idMedicoSeleccionado != null) {
+        _idMedicoSeleccionado != null &&
+        idPacienteFinal != null) {
       
       final fechaHora = DateTime(
         _fechaSeleccionada!.year,
@@ -75,7 +81,7 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
       final fechaHoraFin = fechaHora.add(const Duration(minutes: 30));
 
       final nuevaCita = CitaModel(
-        idPaciente: widget.paciente.idUsuario,
+        idPaciente: idPacienteFinal,
         idMedico: _idMedicoSeleccionado!,
         fechaHora: fechaHora,
         fechaHoraFin: fechaHoraFin,
@@ -86,15 +92,41 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
       context.read<CitasBloc>().add(SolicitarCitaEvent(cita: nuevaCita));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor completa todos los campos')),
+        const SnackBar(content: Text('Por favor completa todos los campos correctamente.')),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Agendar Cita')),
+    return Theme(
+      data: ThemeData(
+        brightness: Brightness.dark,
+        scaffoldBackgroundColor: const Color(0xFF313338),
+        colorScheme: const ColorScheme.dark(
+          primary: Color(0xFF5865F2),
+          surface: Color(0xFF1E1F22),
+        ),
+        inputDecorationTheme: const InputDecorationTheme(
+          filled: true,
+          fillColor: Color(0xFF1E1F22),
+          labelStyle: TextStyle(color: Color(0xFFB5BAC1)),
+          border: OutlineInputBorder(
+            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Color(0xFF5865F2), width: 2),
+            borderRadius: BorderRadius.all(Radius.circular(8)),
+          ),
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF313338),
+          elevation: 0,
+        ),
+      ),
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Agendar Cita')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -121,27 +153,67 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
                  // Ignore
               }
 
-              return Form(
-                key: _formKey,
-                child: ListView(
-                  children: [
-                    if (state is CitasLoading)
-                      const Center(child: CircularProgressIndicator()),
-                    
-                    const SizedBox(height: 16),
-                    DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(labelText: 'Especialista', border: OutlineInputBorder()),
-                      value: _idMedicoSeleccionado,
-                      items: medicos.map((medico) {
-                        return DropdownMenuItem<String>(
-                          value: medico['id_medico'],
-                          child: Text(medico['usuario']['nombre_completo']),
-                        );
-                      }).toList(),
-                      onChanged: (val) => setState(() => _idMedicoSeleccionado = val),
-                      validator: (val) => val == null ? 'Requerido' : null,
-                    ),
-                    const SizedBox(height: 16),
+              return Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 450),
+                  child: Form(
+                    key: _formKey,
+                    child: ListView(
+                      children: [
+                        if (state is CitasLoading)
+                          const Center(child: CircularProgressIndicator()),
+                        
+                        const SizedBox(height: 16),
+                        
+                        // Selector de Paciente (Solo para Secretarias/Admin)
+                        if (widget.paciente.idRol == 1 || widget.paciente.idRol == 2) ...[
+                          FutureBuilder<List<Map<String, dynamic>>>(
+                            future: Supabase.instance.client
+                                .from('usuario')
+                                .select('id_usuario, nombre_completo')
+                                .eq('id_rol', 4), // 4 es Paciente
+                            builder: (context, snapshot) {
+                              if (!snapshot.hasData) {
+                                return const CircularProgressIndicator();
+                              }
+                              return DropdownButtonFormField<String>(
+                                decoration: const InputDecoration(
+                                  labelText: 'Paciente Destinatario',
+                                  border: OutlineInputBorder(),
+                                ),
+                                value: _idPacienteSeleccionado,
+                                items: snapshot.data!.map((pac) {
+                                  return DropdownMenuItem<String>(
+                                    value: pac['id_usuario'],
+                                    child: Text(pac['nombre_completo'].toString()),
+                                  );
+                                }).toList(),
+                                onChanged: (val) =>
+                                    setState(() => _idPacienteSeleccionado = val),
+                                validator: (val) => val == null ? 'Requerido' : null,
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+
+                        DropdownButtonFormField<String>(
+                          decoration: const InputDecoration(
+                            labelText: 'Doctores Disponibles',
+                            border: OutlineInputBorder(),
+                          ),
+                          value: _idMedicoSeleccionado,
+                          items: medicos.map((medico) {
+                            return DropdownMenuItem<String>(
+                              value: medico['id_medico'],
+                              child: Text('Dr. ${medico['usuario']['nombre_completo']} - ${medico['especialidad']['nombre']}'),
+                            );
+                          }).toList(),
+                          onChanged: (val) =>
+                              setState(() => _idMedicoSeleccionado = val),
+                          validator: (val) => val == null ? 'Requerido' : null,
+                        ),
+                        const SizedBox(height: 16),
                     
                     Row(
                       children: [
@@ -186,12 +258,15 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
                         child: const Text('Solicitar Cita'),
                       ),
                     )
-                  ],
+                      ],
+                    ),
+                  ),
                 ),
               );
             },
           ),
         ),
+      ),
       ),
     );
   }
