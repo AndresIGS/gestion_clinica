@@ -18,4 +18,8 @@
 
 ## 5. Pruebas Unitarias / Widgets
 - **Gotcha**: Las pruebas actuales pueden fallar.
-- **Razón**: [PENDIENTE: Los tests existentes en `test/` (e.g. `widget_test.dart`) son los genéricos de Flutter y no contemplan la inyección de dependencias `GetIt` ni el `MultiBlocProvider`. Hay que actualizar estos tests o fallarán inmediatamente].
+- **Razón**: [RESUELTO] Los tests genéricos del contador fueron reemplazados por tests de modelos (`UsuarioModel`, `CitaModel`) y tests de BLoCs (`AuthBloc`, `CitasBloc`) usando `mocktail` y `bloc_test`.
+
+## 6. Credenciales de Supabase en el código
+- **Gotcha**: Tener la `url` y `anonKey` hardcodeadas en `lib/main.dart`.
+- **Razón**: [RESUELTO] Las credenciales ahora se cargan desde `.env` mediante `flutter_dotenv` y `.env` está ignorado en `.gitignore`.

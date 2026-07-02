@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../../core/errors/error_handler.dart';
 import '../../../domain/repositories/auth_repository.dart';
 import 'auth_event.dart';
 import 'auth_state.dart';
@@ -17,7 +18,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
         emit(AuthAuthenticated(usuario: usuario)); // Redirige según el rol
       } catch (e) {
-        emit(AuthError(mensaje: e.toString())); // Muestra el error
+        emit(AuthError(mensaje: ErrorHandler.map(e).message)); // Muestra el error
       }
     });
 
@@ -45,7 +46,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         );
         emit(AuthAuthenticated(usuario: usuario));
       } catch (e) {
-        emit(AuthError(mensaje: e.toString()));
+        emit(AuthError(mensaje: ErrorHandler.map(e).message));
       }
     });
 
@@ -56,7 +57,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         await authRepository.cerrarSesion();
         emit(AuthInitial()); // Vuelve a la pantalla de login
       } catch (e) {
-        emit(AuthError(mensaje: e.toString()));
+        emit(AuthError(mensaje: ErrorHandler.map(e).message));
       }
     });
   }

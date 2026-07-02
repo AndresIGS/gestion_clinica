@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/usuario_model.dart';
 
@@ -66,7 +67,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   }) async {
     try {
       // Enviar credenciales Y metadatos.
-      print(
+      debugPrint(
         "Datos enviados: nombre_completo: $nombreCompleto, id_rol: $idRol, telefono: $telefono",
       );
       // El Trigger en SQL capturará la 'data' y llenará la tabla pública automáticamente.
@@ -77,11 +78,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
           'nombre_completo': nombreCompleto,
           'id_rol': idRol,
           'telefono': telefono,
-          if (idEspecialidad != null) 'id_especialidad': idEspecialidad,
+          'id_especialidad': idEspecialidad,
           // --- ENVÍO DE DATOS A SUPABASE ---
           // En auth_remote_data_source.dart
-          if (matriculaMedica != null) 'matricula_medica': matriculaMedica,
-          if (fechaNacimiento != null) 'fecha_nacimiento': fechaNacimiento,
+          'matricula_medica': matriculaMedica,
+          'fecha_nacimiento': fechaNacimiento,
         },
       );
     } catch (e) {

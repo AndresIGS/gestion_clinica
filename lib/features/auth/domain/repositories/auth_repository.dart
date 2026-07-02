@@ -27,6 +27,8 @@ class AuthRepository {
       idRol: idRol,
       telefono: telefono,
       idEspecialidad: idEspecialidad,
+      matriculaMedica: matriculaMedica,
+      fechaNacimiento: fechaNacimiento,
     );
   }
 

@@ -5,7 +5,19 @@ class ReportesRepository {
 
   ReportesRepository({required this.remoteDataSource});
 
-  Future<Map<String, int>> obtenerEstadisticasCitas() async {
-    return await remoteDataSource.obtenerEstadisticasCitas();
+  Future<Map<String, int>> obtenerEstadisticasCitas({
+    String? idMedico,
+    DateTime? fechaInicio,
+    DateTime? fechaFin,
+  }) async {
+    return await remoteDataSource.obtenerEstadisticasCitas(
+      idMedico: idMedico,
+      fechaInicio: fechaInicio,
+      fechaFin: fechaFin,
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> obtenerMedicos() async {
+    return await remoteDataSource.obtenerMedicos();
   }
 }

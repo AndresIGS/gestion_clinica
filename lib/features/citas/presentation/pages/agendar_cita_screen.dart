@@ -60,15 +60,17 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
   }
 
   void _agendarCita() {
-    final bool esSecretaria = widget.paciente.idRol == 1 || widget.paciente.idRol == 2;
-    final idPacienteFinal = esSecretaria ? _idPacienteSeleccionado : widget.paciente.idUsuario;
+    final bool esSecretaria =
+        widget.paciente.idRol == 1 || widget.paciente.idRol == 2;
+    final idPacienteFinal = esSecretaria
+        ? _idPacienteSeleccionado
+        : widget.paciente.idUsuario;
 
     if (_formKey.currentState!.validate() &&
         _fechaSeleccionada != null &&
         _horaSeleccionada != null &&
         _idMedicoSeleccionado != null &&
         idPacienteFinal != null) {
-      
       final fechaHora = DateTime(
         _fechaSeleccionada!.year,
         _fechaSeleccionada!.month,
@@ -92,41 +94,17 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
       context.read<CitasBloc>().add(SolicitarCitaEvent(cita: nuevaCita));
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Por favor completa todos los campos correctamente.')),
+        const SnackBar(
+          content: Text('Por favor completa todos los campos correctamente.'),
+        ),
       );
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Theme(
-      data: ThemeData(
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: const Color(0xFF313338),
-        colorScheme: const ColorScheme.dark(
-          primary: Color(0xFF5865F2),
-          surface: Color(0xFF1E1F22),
-        ),
-        inputDecorationTheme: const InputDecorationTheme(
-          filled: true,
-          fillColor: Color(0xFF1E1F22),
-          labelStyle: TextStyle(color: Color(0xFFB5BAC1)),
-          border: OutlineInputBorder(
-            borderSide: BorderSide.none,
-            borderRadius: BorderRadius.all(Radius.circular(8)),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderSide: BorderSide(color: Color(0xFF5865F2), width: 2),
-            borderRadius: BorderRadius.all(Radius.circular(8)),
-          ),
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF313338),
-          elevation: 0,
-        ),
-      ),
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Agendar Cita')),
+    return Scaffold(
+      appBar: AppBar(title: const Text('Agendar Cita')),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16.0),
@@ -134,11 +112,17 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
             listener: (context, state) {
               if (state is CitasError) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.mensaje), backgroundColor: Colors.red),
+                  SnackBar(
+                    content: Text(state.mensaje),
+                    backgroundColor: Colors.red,
+                  ),
                 );
               } else if (state is CitaSolicitadaExito) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(state.mensaje), backgroundColor: Colors.green),
+                  SnackBar(
+                    content: Text(state.mensaje),
+                    backgroundColor: Colors.green,
+                  ),
                 );
                 Navigator.pop(context); // Vuelve al listado/dashboard
               }
@@ -150,7 +134,7 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
               } else if (state is CitasListadas) {
                 // Ignore, we are not loading medicos
               } else if (state is CitaEstadoActualizado) {
-                 // Ignore
+                // Ignore
               }
 
               return Center(
@@ -162,11 +146,12 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
                       children: [
                         if (state is CitasLoading)
                           const Center(child: CircularProgressIndicator()),
-                        
+
                         const SizedBox(height: 16),
-                        
+
                         // Selector de Paciente (Solo para Secretarias/Admin)
-                        if (widget.paciente.idRol == 1 || widget.paciente.idRol == 2) ...[
+                        if (widget.paciente.idRol == 1 ||
+                            widget.paciente.idRol == 2) ...[
                           FutureBuilder<List<Map<String, dynamic>>>(
                             future: Supabase.instance.client
                                 .from('usuario')
@@ -185,12 +170,16 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
                                 items: snapshot.data!.map((pac) {
                                   return DropdownMenuItem<String>(
                                     value: pac['id_usuario'],
-                                    child: Text(pac['nombre_completo'].toString()),
+                                    child: Text(
+                                      pac['nombre_completo'].toString(),
+                                    ),
                                   );
                                 }).toList(),
-                                onChanged: (val) =>
-                                    setState(() => _idPacienteSeleccionado = val),
-                                validator: (val) => val == null ? 'Requerido' : null,
+                                onChanged: (val) => setState(
+                                  () => _idPacienteSeleccionado = val,
+                                ),
+                                validator: (val) =>
+                                    val == null ? 'Requerido' : null,
                               );
                             },
                           ),
@@ -206,7 +195,9 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
                           items: medicos.map((medico) {
                             return DropdownMenuItem<String>(
                               value: medico['id_medico'],
-                              child: Text('Dr. ${medico['usuario']['nombre_completo']} - ${medico['especialidad']['nombre']}'),
+                              child: Text(
+                                'Dr. ${medico['usuario']['nombre_completo']} - ${medico['especialidad']['nombre']}',
+                              ),
                             );
                           }).toList(),
                           onChanged: (val) =>
@@ -214,50 +205,57 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
                           validator: (val) => val == null ? 'Requerido' : null,
                         ),
                         const SizedBox(height: 16),
-                    
-                    Row(
-                      children: [
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            icon: const Icon(Icons.calendar_today),
-                            label: Text(_fechaSeleccionada == null 
-                                ? 'Seleccionar Fecha' 
-                                : '${_fechaSeleccionada!.day}/${_fechaSeleccionada!.month}/${_fechaSeleccionada!.year}'),
-                            onPressed: _seleccionarFecha,
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                icon: const Icon(Icons.calendar_today),
+                                label: Text(
+                                  _fechaSeleccionada == null
+                                      ? 'Seleccionar Fecha'
+                                      : '${_fechaSeleccionada!.day}/${_fechaSeleccionada!.month}/${_fechaSeleccionada!.year}',
+                                ),
+                                onPressed: _seleccionarFecha,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                icon: const Icon(Icons.access_time),
+                                label: Text(
+                                  _horaSeleccionada == null
+                                      ? 'Seleccionar Hora'
+                                      : _horaSeleccionada!.format(context),
+                                ),
+                                onPressed: _seleccionarHora,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        TextFormField(
+                          controller: _motivoController,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            labelText: 'Motivo de la consulta',
+                            border: OutlineInputBorder(),
+                          ),
+                          validator: (val) =>
+                              val == null || val.isEmpty ? 'Requerido' : null,
+                        ),
+                        const SizedBox(height: 32),
+
+                        SizedBox(
+                          height: 50,
+                          child: FilledButton(
+                            onPressed: state is CitasLoading
+                                ? null
+                                : _agendarCita,
+                            child: const Text('Solicitar Cita'),
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            icon: const Icon(Icons.access_time),
-                            label: Text(_horaSeleccionada == null 
-                                ? 'Seleccionar Hora' 
-                                : _horaSeleccionada!.format(context)),
-                            onPressed: _seleccionarHora,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-
-                    TextFormField(
-                      controller: _motivoController,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        labelText: 'Motivo de la consulta',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (val) => val == null || val.isEmpty ? 'Requerido' : null,
-                    ),
-                    const SizedBox(height: 32),
-
-                    SizedBox(
-                      height: 50,
-                      child: FilledButton(
-                        onPressed: state is CitasLoading ? null : _agendarCita,
-                        child: const Text('Solicitar Cita'),
-                      ),
-                    )
                       ],
                     ),
                   ),
@@ -266,7 +264,6 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
             },
           ),
         ),
-      ),
       ),
     );
   }

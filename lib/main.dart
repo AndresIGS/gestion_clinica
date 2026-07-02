@@ -1,22 +1,35 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sistemav2/features/citas/presentation/blocs/citas/citas_bloc.dart';
+import 'package:sistemav2/features/historial/presentation/blocs/historial_bloc.dart';
+import 'package:sistemav2/features/historial_clinico/presentation/blocs/historial_clinico_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'core/services/push_notification_service.dart';
+import 'core/theme/app_theme.dart';
 import 'injection_container.dart'
     as di; // Importamos la inyección de dependencias
 import 'features/auth/presentation/blocs/auth/auth_bloc.dart';
-import 'features/auth/presentation/pages/login_screen.dart';
+import 'features/auth/presentation/pages/splash_screen.dart';
 import 'features/notificaciones/presentation/blocs/notificaciones_bloc.dart';
+import 'features/perfil/presentation/blocs/perfil_bloc.dart';
 import 'features/reportes/presentation/blocs/reportes_bloc.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Carga las variables de entorno según el ambiente
+  final envFile = kDebugMode ? '.env.dev' : '.env.prod';
+  await dotenv.load(fileName: envFile);
+
+  // Inicializa Firebase Cloud Messaging (requere configuración previa)
+  await PushNotificationService.initialize();
+
   // Inicializa la conexión con Supabase
   await Supabase.initialize(
-    url: 'https://thzgbupgkiqivcemhhlx.supabase.co',
-    anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRoemdidXBna2lxaXZjZW1oaGx4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI5NTc0NzQsImV4cCI6MjA5ODUzMzQ3NH0.E-apczy9_hJPEYHn8qBxZGWT6gDmLEr3eWVOubMXJyY',
+    url: dotenv.env['SUPABASE_URL']!,
+    publishableKey: dotenv.env['SUPABASE_ANON_KEY']!,
   );
 
   // Inicializa la Inyección de Dependencias (Singleton)
@@ -36,25 +49,18 @@ class ClinicaApp extends StatelessWidget {
         BlocProvider(create: (_) => di.sl<AuthBloc>()),
         // Proveemos el BLoC de citas para que cualquier pantalla pueda usarlo
         BlocProvider(create: (_) => di.sl<CitasBloc>()),
+        BlocProvider(create: (_) => di.sl<HistorialBloc>()),
+        BlocProvider(create: (_) => di.sl<HistorialClinicoBloc>()),
         BlocProvider(create: (_) => di.sl<NotificacionesBloc>()),
+        BlocProvider(create: (_) => di.sl<PerfilBloc>()),
         BlocProvider(create: (_) => di.sl<ReportesBloc>()),
       ],
       child: MaterialApp(
         title: 'Gestión Clínica',
         debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          // Configuramos el Morado como color principal
-          colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
-          useMaterial3: true,
-          filledButtonTheme: FilledButtonThemeData(
-            style: FilledButton.styleFrom(
-              backgroundColor: Colors.deepPurple,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ),
-        // Cambiamos el texto de prueba por nuestra nueva pantalla de Login
-        home: const LoginScreen(),
+        theme: AppTheme.lightTheme,
+        // El splash verifica si hay sesión activa y redirige al login o dashboard
+        home: const SplashScreen(),
       ),
     );
   }

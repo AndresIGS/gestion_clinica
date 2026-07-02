@@ -11,11 +11,14 @@ El proyecto se organiza principalmente por funcionalidades (`features`), aplican
 
 ```text
 lib/
-├── core/                   # Constantes, temas, utilidades globales.
+├── core/                   # Constantes, temas, utilidades globales, servicios.
 ├── features/
 │   ├── auth/               # Autenticación, Login, Roles.
 │   ├── citas/              # Agendamiento, listado y gestión de estados de citas.
+│   ├── historial/          # Registro de cambios de estado de citas.
+│   ├── historial_clinico/  # Registros médicos de diagnóstico y tratamiento.
 │   ├── notificaciones/     # Escucha en tiempo real de cambios en Supabase.
+│   ├── perfil/             # Visualización y edición del perfil del usuario.
 │   └── reportes/           # Estadísticas de citas para administradores.
 │       ├── data/           # Modelos y DataSources (comunicación con Supabase).
 │       ├── domain/         # Repositorios y Use Cases (lógica abstracta).

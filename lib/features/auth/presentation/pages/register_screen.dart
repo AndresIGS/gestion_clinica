@@ -1,14 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+import '../../../../main.dart';
+import '../../data/models/usuario_model.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/auth/auth_event.dart';
 import '../blocs/auth/auth_state.dart';
 import 'dashboard_screen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
-import '../../../../main.dart'; // Para FondoWhatsApp
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  /// Si se proporciona, significa que un usuario autenticado (admin o secretaria)
+  /// está registrando a otra persona. En ese caso se permite elegir rol.
+  final UsuarioModel? usuarioRegistrador;
+
+  const RegisterScreen({super.key, this.usuarioRegistrador});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -21,12 +26,26 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _nombreController = TextEditingController();
   final _telefonoController = TextEditingController();
 
-  // --- NUEVOS CONTROLADORES ---
   final _matriculaController = TextEditingController();
   final _fechaNacimientoController = TextEditingController();
 
-  int _rolSeleccionado = 4; // Por defecto: 4 (Paciente)
+  late int _rolSeleccionado;
   int? _especialidadSeleccionada;
+
+  bool get _esRegistroPublico => widget.usuarioRegistrador == null;
+
+  bool get _permiteElegirRol {
+    if (_esRegistroPublico) return false;
+    final rol = widget.usuarioRegistrador!.idRol;
+    return rol == 1 || rol == 2; // Admin o Secretaria
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // En registro público forzamos Paciente.
+    _rolSeleccionado = _permiteElegirRol ? 4 : 4;
+  }
 
   @override
   void dispose() {
@@ -39,17 +58,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  // Método para mostrar el calendario
   Future<void> _seleccionarFecha(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(2000), // Fecha por defecto al abrir
+      initialDate: DateTime(2000),
       firstDate: DateTime(1900),
       lastDate: DateTime.now(),
     );
     if (picked != null) {
       setState(() {
-        // Formateamos a YYYY-MM-DD para que PostgreSQL lo acepte sin problemas
         _fechaNacimientoController.text =
             "${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}";
       });
@@ -75,7 +92,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
           idRol: _rolSeleccionado,
           telefono: _telefonoController.text.trim(),
           idEspecialidad: _especialidadSeleccionada,
-          // Enviamos los nuevos datos según el rol
           matriculaMedica: _rolSeleccionado == 3
               ? _matriculaController.text.trim()
               : null,
@@ -89,8 +105,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final titulo = _esRegistroPublico ? 'Crear Cuenta' : 'Registrar Usuario';
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Crear Cuenta')),
+      appBar: AppBar(title: Text(titulo)),
       body: FondoWhatsApp(
         child: SafeArea(
           child: Center(
@@ -114,14 +132,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         ),
                       );
 
-                      Navigator.pushAndRemoveUntil(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              DashboardScreen(usuario: state.usuario),
-                        ),
-                        (route) => false,
-                      );
+                      if (_esRegistroPublico) {
+                        Navigator.pushAndRemoveUntil(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                DashboardScreen(usuario: state.usuario),
+                          ),
+                          (route) => false,
+                        );
+                      } else {
+                        Navigator.pop(context);
+                      }
                     }
                   }
                 },
@@ -177,50 +199,48 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             const SizedBox(height: 16),
 
-                            // --- SELECTOR DE ROL ---
-                            DropdownButtonFormField<int>(
-                              value: _rolSeleccionado,
-                              decoration: const InputDecoration(
-                                labelText: '¿Qué tipo de usuario eres?',
-                                prefixIcon: Icon(Icons.badge_outlined),
-                                border: OutlineInputBorder(),
+                            if (_permiteElegirRol) ...[
+                              DropdownButtonFormField<int>(
+                                initialValue: _rolSeleccionado,
+                                decoration: const InputDecoration(
+                                  labelText: 'Tipo de usuario',
+                                  prefixIcon: Icon(Icons.badge_outlined),
+                                  border: OutlineInputBorder(),
+                                ),
+                                items: const [
+                                  DropdownMenuItem(
+                                    value: 4,
+                                    child: Text('Paciente'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 3,
+                                    child: Text('Médico'),
+                                  ),
+                                  DropdownMenuItem(
+                                    value: 2,
+                                    child: Text('Secretaria'),
+                                  ),
+                                ],
+                                onChanged: (value) {
+                                  setState(() {
+                                    _rolSeleccionado = value!;
+                                    if (_rolSeleccionado != 3) {
+                                      _especialidadSeleccionada = null;
+                                      _matriculaController.clear();
+                                    }
+                                    if (_rolSeleccionado != 4) {
+                                      _fechaNacimientoController.clear();
+                                    }
+                                  });
+                                },
                               ),
-                              items: const [
-                                DropdownMenuItem(
-                                  value: 4,
-                                  child: Text('Paciente'),
-                                ),
-                                DropdownMenuItem(
-                                  value: 3,
-                                  child: Text('Médico'),
-                                ),
-                              ],
-                              onChanged: (value) {
-                                setState(() {
-                                  _rolSeleccionado = value!;
-                                  // Limpiamos los datos del otro rol para evitar cruces
-                                  if (_rolSeleccionado != 3) {
-                                    _especialidadSeleccionada = null;
-                                    _matriculaController.clear();
-                                  }
-                                  if (_rolSeleccionado != 4) {
-                                    _fechaNacimientoController.clear();
-                                  }
-                                });
-                              },
-                            ),
-                            const SizedBox(height: 16),
+                              const SizedBox(height: 16),
+                            ],
 
-                            // ==========================================
-                            // --- CAMPOS DINÁMICOS SEGÚN EL ROL ---
-                            // ==========================================
-
-                            // 1. SI ES PACIENTE (Rol 4): Pedir Fecha de Nacimiento
                             if (_rolSeleccionado == 4) ...[
                               TextFormField(
                                 controller: _fechaNacimientoController,
-                                readOnly:
-                                    true, // Evita que se escriba con el teclado
+                                readOnly: true,
                                 onTap: () => _seleccionarFecha(context),
                                 decoration: const InputDecoration(
                                   labelText: 'Fecha de Nacimiento',
@@ -234,7 +254,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ],
 
-                            // 2. SI ES MÉDICO (Rol 3): Pedir Matrícula y Especialidad
                             if (_rolSeleccionado == 3) ...[
                               TextFormField(
                                 controller: _matriculaController,
@@ -262,7 +281,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                   }
 
                                   return DropdownButtonFormField<int>(
-                                    value: _especialidadSeleccionada,
+                                    initialValue: _especialidadSeleccionada,
                                     decoration: const InputDecoration(
                                       labelText: 'Selecciona tu Especialidad',
                                       prefixIcon: Icon(
@@ -298,7 +317,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                     ? const CircularProgressIndicator(
                                         color: Colors.white,
                                       )
-                                    : const Text('Registrarse'),
+                                    : Text(_esRegistroPublico
+                                        ? 'Registrarse'
+                                        : 'Registrar usuario'),
                               ),
                             ),
                           ],

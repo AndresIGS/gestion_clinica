@@ -46,7 +46,7 @@ class CitasRemoteDataSourceImpl implements CitasRemoteDataSource {
           .from('cita')
           .select('id_cita')
           .eq('id_medico', cita.idMedico)
-          .inFilter('estado', ['solicitado', 'aprobado'])
+          .inFilter('estado', ['solicitado', 'aceptado'])
           .lt('fecha_hora', cita.fechaHoraFin.toIso8601String())
           .gt('fecha_hora_fin', cita.fechaHora.toIso8601String());
 

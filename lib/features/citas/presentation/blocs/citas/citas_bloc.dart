@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../../core/errors/error_handler.dart';
 import '../../../domain/repositories/citas_repository.dart';
 import 'citas_event.dart';
 import 'citas_state.dart';
@@ -14,7 +15,7 @@ class CitasBloc extends Bloc<CitasEvent, CitasState> {
         final medicos = await citasRepository.obtenerMedicos();
         emit(MedicosCargados(medicos: medicos));
       } catch (e) {
-        emit(CitasError(mensaje: e.toString()));
+        emit(CitasError(mensaje: ErrorHandler.map(e).message));
       }
     });
 
@@ -29,7 +30,7 @@ class CitasBloc extends Bloc<CitasEvent, CitasState> {
           ),
         );
       } catch (e) {
-        emit(CitasError(mensaje: e.toString()));
+        emit(CitasError(mensaje: ErrorHandler.map(e).message));
       }
     });
 
@@ -39,7 +40,7 @@ class CitasBloc extends Bloc<CitasEvent, CitasState> {
         final citas = await citasRepository.obtenerCitas(event.idUsuario, event.idRol);
         emit(CitasListadas(citas: citas));
       } catch (e) {
-        emit(CitasError(mensaje: e.toString()));
+        emit(CitasError(mensaje: ErrorHandler.map(e).message));
       }
     });
 
@@ -53,7 +54,7 @@ class CitasBloc extends Bloc<CitasEvent, CitasState> {
           ),
         );
       } catch (e) {
-        emit(CitasError(mensaje: e.toString()));
+        emit(CitasError(mensaje: ErrorHandler.map(e).message));
       }
     });
   }
