@@ -1,4 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/errors/error_handler.dart';
+import '../../../../core/errors/failures.dart';
 import '../models/cita_model.dart';
 
 abstract class CitasRemoteDataSource {
@@ -73,8 +75,20 @@ class CitasRemoteDataSourceImpl implements CitasRemoteDataSource {
 
       // Insertamos la cita. El Trigger de SQL creará el Historial automáticamente
       await supabaseClient.from('cita').insert(cita.toJson());
+    } on Failure catch (_) {
+      rethrow;
+    } on PostgrestException catch (e) {
+      throw ErrorHandler.map(e);
+    } on Exception catch (e) {
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('horario seleccionado no está disponible') ||
+          msg.contains('médico no atiende') ||
+          msg.contains('permiso denegado')) {
+        throw ValidationFailure(e.toString());
+      }
+      throw ServerFailure(e.toString());
     } catch (e) {
-      throw Exception('Error al agendar la cita: $e');
+      throw ServerFailure(e.toString());
     }
   }
 

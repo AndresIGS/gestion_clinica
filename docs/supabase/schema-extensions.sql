@@ -5,14 +5,24 @@
 -- ============================================================
 
 -- ------------------------------------------------------------
--- 1. Campo adjuntos en historial_clinico
+-- 1. Columna fecha_hora_fin en cita
+-- ------------------------------------------------------------
+-- La app asigna una duracion de 30 minutos a cada cita y valida
+-- solapamientos usando este campo. Si tu schema base no lo incluye,
+-- agregalo aqui.
+-- ------------------------------------------------------------
+ALTER TABLE public.cita
+ADD COLUMN IF NOT EXISTS fecha_hora_fin timestamp with time zone;
+
+-- ------------------------------------------------------------
+-- 2. Campo adjuntos en historial_clinico
 -- ------------------------------------------------------------
 -- Permite guardar URLs de archivos subidos a Supabase Storage.
 -- ------------------------------------------------------------
 ALTER TABLE public.historial_clinico
 ADD COLUMN IF NOT EXISTS adjuntos text [] DEFAULT '{}'::text [];
 -- ------------------------------------------------------------
--- 2. Bucket de Supabase Storage: historiales
+-- 3. Bucket de Supabase Storage: historiales
 -- ------------------------------------------------------------
 -- Crea el bucket si no existe. Ajusta 'public' según tu modelo de
 -- seguridad (true = accesible por URL, false = solo mediante RLS).
@@ -52,7 +62,7 @@ CREATE POLICY "Médicos pueden eliminar historiales"
     )
   );
 -- ------------------------------------------------------------
--- 3. Función RPC: búsqueda de citas con nombres
+-- 4. Función RPC: búsqueda de citas con nombres
 -- ------------------------------------------------------------
 -- Permite buscar citas por nombre de paciente, médico o motivo,
 -- respetando los filtros de rol, estado y rango de fechas.
