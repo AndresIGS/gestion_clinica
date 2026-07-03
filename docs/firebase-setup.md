@@ -2,6 +2,8 @@
 
 El proyecto ya incluye la estructura para enviar notificaciones push. Supabase gestiona los datos y FCM se encarga de entregar las notificaciones a los dispositivos.
 
+> Para una guía paso a paso completa de cada clic en las consolas externas, revisa `docs/manual-consolas-externas.md`.
+
 ## Arquitectura
 
 ```text

@@ -10,7 +10,7 @@ Este documento resume todo lo que se debe ejecutar o configurar para llevar la a
 
 ## 2. Base de datos Supabase
 
-Ejecutar en orden en el SQL Editor de Supabase:
+Ejecutar en orden en el SQL Editor de Supabase. Para instrucciones detalladas paso a paso revisa `docs/manual-consolas-externas.md`.
 
 1. Schema base de la app (tablas `usuario`, `medico`, `paciente`, `cita`, `historial_cita`, `especialidad`, `horario_medico`, `historial_clinico`).
 2. `docs/supabase/triggers.sql` — funciones y triggers de sincronización de usuario e historial de citas.
