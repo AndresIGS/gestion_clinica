@@ -160,61 +160,28 @@ class CitasRemoteDataSourceImpl implements CitasRemoteDataSource {
     String? busqueda,
   }) async {
     try {
-      // Si hay búsqueda por texto usamos la función RPC que trae nombres
-      // y permite filtrar por paciente, médico o motivo.
-      if (busqueda != null && busqueda.trim().isNotEmpty) {
-        final response = await supabaseClient.rpc(
-          'obtener_citas_con_nombres',
-          params: {
-            'p_id_usuario': idUsuario,
-            'p_id_rol': idRol,
-            'p_estado': estado,
-            'p_fecha_inicio': fechaInicio?.toIso8601String(),
-            'p_fecha_fin': fechaFin
-                ?.add(const Duration(hours: 23, minutes: 59, seconds: 59))
-                .toIso8601String(),
-            'p_busqueda': busqueda.trim(),
-            'p_limit': limit,
-            'p_offset': offset,
-          },
-        );
-        return (response as List).map((json) => CitaModel.fromJson(json)).toList();
-      }
-
-      var query = supabaseClient.from('cita').select();
-
-      // Aplicar filtros según el rol localmente si fuera necesario,
-      // aunque el RLS de Supabase ya filtra automáticamente a nivel de DB.
-      // Por si acaso, lo reforzamos aquí para la vista.
-      if (idRol == 4) {
-        // Paciente
-        query = query.eq('id_paciente', idUsuario);
-      } else if (idRol == 3) {
-        // Médico
-        query = query.eq('id_medico', idUsuario);
-      }
-
-      if (estado != null && estado.isNotEmpty) {
-        query = query.eq('estado', estado);
-      }
-
-      if (fechaInicio != null) {
-        query = query.gte('fecha_hora', fechaInicio.toIso8601String());
-      }
-
-      if (fechaFin != null) {
-        final finDelDia = fechaFin.add(
-          const Duration(hours: 23, minutes: 59, seconds: 59),
-        );
-        query = query.lte('fecha_hora', finDelDia.toIso8601String());
-      }
-
-      // Ordenar por fecha_hora descendente y paginar
-      final response = await query
-          .order('fecha_hora', ascending: false)
-          .range(offset, offset + limit - 1);
-
+      // Se usa la función RPC para centralizar la lógica de filtros por rol,
+      // búsqueda textual, rango de fechas y paginación. Al ejecutarse con
+      // SECURITY DEFINER evita discrepancias entre la lógica de la app y
+      // las políticas RLS de Supabase.
+      final response = await supabaseClient.rpc(
+        'obtener_citas_con_nombres',
+        params: {
+          'p_id_usuario': idUsuario,
+          'p_id_rol': idRol,
+          'p_estado': estado,
+          'p_fecha_inicio': fechaInicio?.toIso8601String(),
+          'p_fecha_fin': fechaFin
+              ?.add(const Duration(hours: 23, minutes: 59, seconds: 59))
+              .toIso8601String(),
+          'p_busqueda': busqueda?.trim(),
+          'p_limit': limit,
+          'p_offset': offset,
+        },
+      );
       return (response as List).map((json) => CitaModel.fromJson(json)).toList();
+    } on PostgrestException catch (e) {
+      throw ErrorHandler.map(e);
     } catch (e) {
       throw Exception('Error al obtener las citas: $e');
     }
@@ -227,8 +194,12 @@ class CitasRemoteDataSourceImpl implements CitasRemoteDataSource {
           .from('cita')
           .update({'estado': nuevoEstado})
           .eq('id_cita', idCita);
+    } on PostgrestException catch (e) {
+      throw ErrorHandler.map(e);
+    } on Failure catch (_) {
+      rethrow;
     } catch (e) {
-      throw Exception('Error al actualizar el estado de la cita: $e');
+      throw ServerFailure('Error al actualizar el estado de la cita: $e');
     }
   }
 

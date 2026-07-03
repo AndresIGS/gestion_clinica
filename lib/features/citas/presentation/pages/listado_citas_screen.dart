@@ -368,7 +368,7 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
             );
     }
 
-    if (cita.estado == 'solicitado' && (rol == 2 || rol == 3)) {
+    if (cita.estado == 'solicitado' && (rol == 1 || rol == 2 || rol == 3)) {
       botones.add(
         IconButton(
           icon: const Icon(Icons.check_circle, color: Colors.green),
