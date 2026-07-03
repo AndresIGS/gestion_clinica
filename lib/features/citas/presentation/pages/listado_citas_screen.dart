@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/skeleton_list.dart';
 import '../../../auth/data/models/usuario_model.dart';
 import '../../../historial_clinico/presentation/pages/historial_clinico_cita_screen.dart';
 import '../../data/models/cita_model.dart';
@@ -17,17 +19,103 @@ class ListadoCitasScreen extends StatefulWidget {
 }
 
 class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
+  static const int _limitePorPagina = 20;
+
+  final ScrollController _scrollController = ScrollController();
+  int _offsetActual = 0;
+  bool _cargandoMas = false;
+
+  String? _estadoSeleccionado;
+  DateTime? _fechaInicio;
+  DateTime? _fechaFin;
+
   @override
   void initState() {
     super.initState();
     _cargarCitas();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   void _cargarCitas() {
+    _offsetActual = 0;
     context.read<CitasBloc>().add(CargarCitasEvent(
           idUsuario: widget.usuario.idUsuario,
           idRol: widget.usuario.idRol,
+          limit: _limitePorPagina,
+          offset: _offsetActual,
+          esPrimeraCarga: true,
+          estado: _estadoSeleccionado,
+          fechaInicio: _fechaInicio,
+          fechaFin: _fechaFin,
         ));
+  }
+
+  void _cargarMasCitas() {
+    if (_cargandoMas) return;
+
+    _offsetActual += _limitePorPagina;
+    _cargandoMas = true;
+    context.read<CitasBloc>().add(CargarCitasEvent(
+          idUsuario: widget.usuario.idUsuario,
+          idRol: widget.usuario.idRol,
+          limit: _limitePorPagina,
+          offset: _offsetActual,
+          esPrimeraCarga: false,
+          estado: _estadoSeleccionado,
+          fechaInicio: _fechaInicio,
+          fechaFin: _fechaFin,
+        ));
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      final state = context.read<CitasBloc>().state;
+      if (state is CitasListadas && state.hayMas) {
+        _cargarMasCitas();
+      }
+    }
+  }
+
+  Future<void> _seleccionarFechaInicio() async {
+    final fecha = await showDatePicker(
+      context: context,
+      initialDate: _fechaInicio ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (fecha != null) {
+      setState(() => _fechaInicio = fecha);
+      _cargarCitas();
+    }
+  }
+
+  Future<void> _seleccionarFechaFin() async {
+    final fecha = await showDatePicker(
+      context: context,
+      initialDate: _fechaFin ?? DateTime.now(),
+      firstDate: DateTime(2020),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+    if (fecha != null) {
+      setState(() => _fechaFin = fecha);
+      _cargarCitas();
+    }
+  }
+
+  void _limpiarFiltros() {
+    setState(() {
+      _estadoSeleccionado = null;
+      _fechaInicio = null;
+      _fechaFin = null;
+    });
+    _cargarCitas();
   }
 
   void _actualizarEstado(int idCita, String nuevoEstado) {
@@ -63,45 +151,151 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.mensaje), backgroundColor: Colors.green),
             );
-            // Recargar citas después de actualizar
             _cargarCitas();
+          } else if (state is CitasListadas || state is CitasPaginando) {
+            _cargandoMas = false;
           }
         },
         builder: (context, state) {
-          if (state is CitasLoading) {
-            return const Center(child: CircularProgressIndicator());
+          if (state is CitasLoading && state is! CitasPaginando) {
+            return const SkeletonList();
           }
 
-          if (state is CitasListadas) {
-            final citas = state.citas;
-            if (citas.isEmpty) {
-              return const Center(child: Text('No hay citas registradas.'));
-            }
+          List<CitaModel> citas = [];
+          bool paginando = false;
 
-            return ListView.builder(
-              itemCount: citas.length,
-              itemBuilder: (context, index) {
-                final cita = citas[index];
-                return Card(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: ListTile(
-                    title: Text('Fecha: ${cita.fechaHora.toString().substring(0, 16)}'),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Estado: ${cita.estado.toUpperCase()}'),
-                        if (cita.motivo != null) Text('Motivo: ${cita.motivo}'),
-                      ],
-                    ),
-                    trailing: _construirAcciones(cita),
-                  ),
-                );
-              },
+          if (state is CitasListadas) {
+            citas = state.citas;
+          } else if (state is CitasPaginando) {
+            citas = state.citasActuales;
+            paginando = true;
+          }
+
+          if (citas.isEmpty && !paginando) {
+            return EmptyState(
+              icono: Icons.calendar_today,
+              titulo: 'No hay citas',
+              mensaje: 'No se encontraron citas con los filtros seleccionados.',
+              accion: widget.usuario.idRol == 4
+                  ? FilledButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.add),
+                      label: const Text('Agendar cita'),
+                    )
+                  : null,
             );
           }
 
-          return const Center(child: Text('No se pudieron cargar las citas.'));
+          return ListView.builder(
+            controller: _scrollController,
+            itemCount: citas.length + (paginando ? 1 : 0) + 1,
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return _buildFiltros();
+              }
+
+              final realIndex = index - 1;
+              if (realIndex == citas.length) {
+                return const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Center(child: CircularProgressIndicator()),
+                );
+              }
+
+              final cita = citas[realIndex];
+              return Card(
+                margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: ListTile(
+                  title: Text('Fecha: ${cita.fechaHora.toString().substring(0, 16)}'),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Estado: ${cita.estado.toUpperCase()}'),
+                      if (cita.motivo != null) Text('Motivo: ${cita.motivo}'),
+                    ],
+                  ),
+                  trailing: _construirAcciones(cita),
+                ),
+              );
+            },
+          );
         },
+      ),
+    );
+  }
+
+  Widget _buildFiltros() {
+    return Card(
+      margin: const EdgeInsets.all(16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Filtros',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String?>(
+              initialValue: _estadoSeleccionado,
+              decoration: const InputDecoration(
+                labelText: 'Estado',
+                prefixIcon: Icon(Icons.filter_list),
+              ),
+              items: const [
+                DropdownMenuItem(value: null, child: Text('Todos')),
+                DropdownMenuItem(value: 'solicitado', child: Text('Solicitado')),
+                DropdownMenuItem(value: 'aceptado', child: Text('Aceptado')),
+                DropdownMenuItem(value: 'realizado', child: Text('Realizado')),
+                DropdownMenuItem(value: 'cancelado', child: Text('Cancelado')),
+              ],
+              onChanged: (val) {
+                setState(() => _estadoSeleccionado = val);
+                _cargarCitas();
+              },
+            ),
+            const SizedBox(height: 12),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.date_range),
+                    label: Text(_fechaInicio == null
+                        ? 'Desde'
+                        : '${_fechaInicio!.day}/${_fechaInicio!.month}/${_fechaInicio!.year}'),
+                    onPressed: _seleccionarFechaInicio,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.date_range),
+                    label: Text(_fechaFin == null
+                        ? 'Hasta'
+                        : '${_fechaFin!.day}/${_fechaFin!.month}/${_fechaFin!.year}'),
+                    onPressed: _seleccionarFechaFin,
+                  ),
+                ),
+              ],
+            ),
+            if (_estadoSeleccionado != null ||
+                _fechaInicio != null ||
+                _fechaFin != null) ...[
+              const SizedBox(height: 12),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  icon: const Icon(Icons.clear),
+                  label: const Text('Limpiar'),
+                  onPressed: _limpiarFiltros,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -111,9 +305,8 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
 
     List<Widget> botones = [];
 
-    // Historial clínico: disponible para médico (aceptado/realizado)
-    // y para paciente cuando la cita ya fue realizada.
-    final puedeVerHistorial = (rol == 3 && cita.idMedico == widget.usuario.idUsuario &&
+    final puedeVerHistorial = (rol == 3 &&
+            cita.idMedico == widget.usuario.idUsuario &&
             (cita.estado == 'aceptado' || cita.estado == 'realizado')) ||
         (rol == 4 && cita.estado == 'realizado');
 
@@ -127,15 +320,15 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
       );
     }
 
-    // Si la cita ya está cancelada o realizada, no hay más acciones de estado.
     if (cita.estado == 'cancelado' || cita.estado == 'realizado') {
-      return botones.isEmpty ? null : Row(
-        mainAxisSize: MainAxisSize.min,
-        children: botones,
-      );
+      return botones.isEmpty
+          ? null
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: botones,
+            );
     }
 
-    // HU3: Secretaria o Médico pueden aceptar citas solicitadas
     if (cita.estado == 'solicitado' && (rol == 2 || rol == 3)) {
       botones.add(
         IconButton(
@@ -146,7 +339,6 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
       );
     }
 
-    // HU4: Médico puede finalizar citas aceptadas
     if (cita.estado == 'aceptado' && rol == 3) {
       botones.add(
         IconButton(
@@ -157,7 +349,6 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
       );
     }
 
-    // HU5: Todos pueden cancelar citas activas
     botones.add(
       IconButton(
         icon: const Icon(Icons.cancel, color: Colors.red),

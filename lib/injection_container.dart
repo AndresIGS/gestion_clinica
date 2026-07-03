@@ -14,6 +14,9 @@ import 'features/historial/presentation/blocs/historial_bloc.dart';
 import 'features/historial_clinico/data/datasources/historial_clinico_remote_data_source.dart';
 import 'features/historial_clinico/domain/repositories/historial_clinico_repository.dart';
 import 'features/historial_clinico/presentation/blocs/historial_clinico_bloc.dart';
+import 'features/horarios_medico/data/datasources/horarios_medico_remote_data_source.dart';
+import 'features/horarios_medico/domain/repositories/horarios_medico_repository.dart';
+import 'features/horarios_medico/presentation/blocs/horarios_medico_bloc.dart';
 import 'features/notificaciones/presentation/blocs/notificaciones_bloc.dart';
 import 'features/perfil/data/datasources/perfil_remote_data_source.dart';
 import 'features/perfil/domain/repositories/perfil_repository.dart';
@@ -32,6 +35,7 @@ Future<void> init() async {
   sl.registerFactory(() => CitasBloc(citasRepository: sl()));
   sl.registerFactory(() => HistorialBloc(repository: sl()));
   sl.registerFactory(() => HistorialClinicoBloc(repository: sl()));
+  sl.registerFactory(() => HorariosMedicoBloc(repository: sl()));
   sl.registerFactory(() => NotificacionesBloc(citasRepository: sl()));
   sl.registerFactory(() => PerfilBloc(repository: sl()));
   sl.registerFactory(() => ReportesBloc(repository: sl()));
@@ -47,6 +51,8 @@ Future<void> init() async {
       () => HistorialRepository(remoteDataSource: sl()));
   sl.registerLazySingleton<HistorialClinicoRepository>(
       () => HistorialClinicoRepository(remoteDataSource: sl()));
+  sl.registerLazySingleton<HorariosMedicoRepository>(
+      () => HorariosMedicoRepository(remoteDataSource: sl()));
   sl.registerLazySingleton<PerfilRepository>(
       () => PerfilRepository(remoteDataSource: sl()));
   sl.registerLazySingleton<ReportesRepository>(
@@ -64,6 +70,8 @@ Future<void> init() async {
       () => HistorialRemoteDataSourceImpl(supabaseClient: sl()));
   sl.registerLazySingleton<HistorialClinicoRemoteDataSource>(
       () => HistorialClinicoRemoteDataSourceImpl(supabaseClient: sl()));
+  sl.registerLazySingleton<HorariosMedicoRemoteDataSource>(
+      () => HorariosMedicoRemoteDataSourceImpl(supabaseClient: sl()));
   sl.registerLazySingleton<PerfilRemoteDataSource>(
       () => PerfilRemoteDataSourceImpl(supabaseClient: sl()));
   sl.registerLazySingleton<ReportesRemoteDataSource>(

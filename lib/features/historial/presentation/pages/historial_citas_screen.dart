@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/fade_in_wrapper.dart';
+import '../../../../core/widgets/skeleton_list.dart';
 import '../blocs/historial_bloc.dart';
 import '../blocs/historial_event.dart';
 import '../blocs/historial_state.dart';
@@ -32,15 +35,17 @@ class _HistorialCitasScreenState extends State<HistorialCitasScreen> {
         },
         builder: (context, state) {
           if (state is HistorialLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const SkeletonList();
           }
 
           if (state is HistorialLoaded) {
             final historial = state.historial;
 
             if (historial.isEmpty) {
-              return const Center(
-                child: Text('No hay cambios registrados en el historial.'),
+              return const EmptyState(
+                icono: Icons.history_toggle_off,
+                titulo: 'Sin movimientos',
+                mensaje: 'No hay cambios registrados en el historial de citas.',
               );
             }
 
@@ -49,37 +54,40 @@ class _HistorialCitasScreenState extends State<HistorialCitasScreen> {
               itemCount: historial.length,
               itemBuilder: (context, index) {
                 final item = historial[index];
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
+                return FadeInWrapper(
+                  delay: Duration(milliseconds: index * 60),
+                  child: Card(
+                    margin: const EdgeInsets.only(bottom: 12),
                     child: ListTile(
-                    leading: _IconoEstado(estado: item.estadoNuevo),
-                    title: Text('Cita #${item.idCita}'),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${item.estadoAnterior.toUpperCase()} → ${item.estadoNuevo.toUpperCase()}',
-                        ),
-                        if (item.fechaCita != null)
+                      leading: _IconoEstado(estado: item.estadoNuevo),
+                      title: Text('Cita #${item.idCita}'),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                           Text(
-                            'Fecha cita: ${_formatearFecha(item.fechaCita!)}',
+                            '${item.estadoAnterior.toUpperCase()} → ${item.estadoNuevo.toUpperCase()}',
                           ),
-                        if (item.comentario != null && item.comentario!.isNotEmpty)
+                          if (item.fechaCita != null)
+                            Text(
+                              'Fecha cita: ${_formatearFecha(item.fechaCita!)}',
+                            ),
+                          if (item.comentario != null && item.comentario!.isNotEmpty)
+                            Text(
+                              'Nota: ${item.comentario}',
+                              style: TextStyle(
+                                color: Colors.grey[700],
+                                fontSize: 12,
+                              ),
+                            ),
                           Text(
-                            'Nota: ${item.comentario}',
+                            'Cambio: ${_formatearFechaHora(item.fechaCambio)}',
                             style: TextStyle(
-                              color: Colors.grey[700],
+                              color: Colors.grey[600],
                               fontSize: 12,
                             ),
                           ),
-                        Text(
-                          'Cambio: ${_formatearFechaHora(item.fechaCambio)}',
-                          style: TextStyle(
-                            color: Colors.grey[600],
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 );

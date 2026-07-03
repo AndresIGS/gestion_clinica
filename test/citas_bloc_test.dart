@@ -62,7 +62,7 @@ void main() {
       ),
       expect: () => [
         CitasLoading(),
-        CitasListadas(citas: [cita]),
+        CitasListadas(citas: [cita], hayMas: false),
       ],
     );
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:image_picker/image_picker.dart';
+import '../../../../core/services/storage_service.dart';
 import '../../../auth/data/models/usuario_model.dart';
 import '../../../citas/data/models/cita_model.dart';
 import '../../data/models/historial_clinico_model.dart';
@@ -27,6 +29,9 @@ class _HistorialClinicoCitaScreenState
   final _diagnosticoController = TextEditingController();
   final _tratamientoController = TextEditingController();
 
+  XFile? _archivoSeleccionado;
+  bool _subiendo = false;
+
   bool get _puedeEditar {
     return widget.usuario.idRol == 3 &&
         widget.usuario.idUsuario == widget.cita.idMedico &&
@@ -48,7 +53,14 @@ class _HistorialClinicoCitaScreenState
     super.dispose();
   }
 
-  void _guardar() {
+  Future<void> _seleccionarArchivo() async {
+    final archivo = await StorageService.seleccionarImagen();
+    if (archivo != null) {
+      setState(() => _archivoSeleccionado = archivo);
+    }
+  }
+
+  Future<void> _guardar() async {
     final diagnostico = _diagnosticoController.text.trim();
     final tratamiento = _tratamientoController.text.trim();
 
@@ -59,17 +71,45 @@ class _HistorialClinicoCitaScreenState
       return;
     }
 
-    context.read<HistorialClinicoBloc>().add(
-      CrearHistorialClinicoEvent(
-        historial: HistorialClinicoModel(
-          idPaciente: widget.cita.idPaciente,
-          idMedico: widget.cita.idMedico,
-          idCita: widget.cita.idCita,
-          diagnostico: diagnostico,
-          tratamiento: tratamiento,
+    List<String> adjuntos = [];
+
+    if (_archivoSeleccionado != null) {
+      setState(() => _subiendo = true);
+      final url = await StorageService.subirAdjuntoHistorial(
+        archivo: _archivoSeleccionado!,
+        idPaciente: widget.cita.idPaciente,
+      );
+      setState(() => _subiendo = false);
+
+      if (url != null) {
+        adjuntos.add(url);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('No se pudo subir el archivo. Intenta de nuevo.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+    }
+
+    if (mounted) {
+      context.read<HistorialClinicoBloc>().add(
+        CrearHistorialClinicoEvent(
+          historial: HistorialClinicoModel(
+            idPaciente: widget.cita.idPaciente,
+            idMedico: widget.cita.idMedico,
+            idCita: widget.cita.idCita,
+            diagnostico: diagnostico,
+            tratamiento: tratamiento,
+            adjuntos: adjuntos,
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -89,17 +129,19 @@ class _HistorialClinicoCitaScreenState
                 backgroundColor: Colors.green,
               ),
             );
+            setState(() => _archivoSeleccionado = null);
             context.read<HistorialClinicoBloc>().add(
               CargarHistorialPorCitaEvent(idCita: widget.cita.idCita!),
             );
           }
         },
         builder: (context, state) {
-          if (state is HistorialClinicoLoading) {
+          if (state is HistorialClinicoLoading && !_subiendo) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (state is HistorialClinicoPorCitaLoaded && state.historial != null) {
+          if (state is HistorialClinicoPorCitaLoaded &&
+              state.historial != null) {
             return _buildVista(state.historial!);
           }
 
@@ -155,6 +197,32 @@ class _HistorialClinicoCitaScreenState
               ),
             ),
           ),
+          if (historial.adjuntos.isNotEmpty) ...[
+            const SizedBox(height: 24),
+            Text(
+              'Adjuntos',
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            ...historial.adjuntos.map((url) => Card(
+                  clipBehavior: Clip.antiAlias,
+                  child: InkWell(
+                    onTap: () {}, // Aquí podrías abrir visor de imagen
+                    child: Image.network(
+                      url,
+                      height: 200,
+                      width: double.infinity,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => const ListTile(
+                        leading: Icon(Icons.image_not_supported),
+                        title: Text('No se pudo cargar la imagen'),
+                      ),
+                    ),
+                  ),
+                )),
+          ],
         ],
       ),
     );
@@ -164,6 +232,7 @@ class _HistorialClinicoCitaScreenState
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           TextFormField(
             controller: _diagnosticoController,
@@ -183,12 +252,29 @@ class _HistorialClinicoCitaScreenState
             ),
           ),
           const SizedBox(height: 24),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.attach_file),
+            label: Text(_archivoSeleccionado == null
+                ? 'Adjuntar imagen'
+                : 'Cambiar imagen'),
+            onPressed: _seleccionarArchivo,
+          ),
+          if (_archivoSeleccionado != null) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Archivo: ${_archivoSeleccionado!.name}',
+              style: TextStyle(color: Colors.grey[700]),
+            ),
+          ],
+          const SizedBox(height: 24),
           SizedBox(
             width: double.infinity,
             height: 50,
             child: FilledButton(
-              onPressed: _guardar,
-              child: const Text('Guardar historial clínico'),
+              onPressed: _subiendo ? null : _guardar,
+              child: _subiendo
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('Guardar historial clínico'),
             ),
           ),
         ],

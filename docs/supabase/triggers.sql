@@ -104,6 +104,56 @@ CREATE TRIGGER on_cita_status_change
 
 
 -- ------------------------------------------------------------
+-- Trigger opcional: enviar notificación push al cambiar estado
+-- ------------------------------------------------------------
+-- Requiere:
+--   1. Extensión pg_net habilitada: CREATE EXTENSION IF NOT EXISTS pg_net;
+--   2. Edge Function send-push-notification desplegada.
+--   3. Variables de entorno configuradas en Supabase.
+-- ------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.notify_cita_status_change()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_paciente_nombre TEXT;
+  v_titulo TEXT;
+  v_cuerpo TEXT;
+BEGIN
+  IF OLD.estado IS DISTINCT FROM NEW.estado THEN
+    SELECT u.nombre_completo INTO v_paciente_nombre
+    FROM public.usuario u
+    WHERE u.id_usuario = NEW.id_paciente;
+
+    v_titulo := 'Actualización de tu cita';
+    v_cuerpo := format('Tu cita ahora está: %s', NEW.estado);
+
+    -- Notifica al paciente
+    PERFORM net.http_post(
+      url := 'https://<tu-proyecto>.supabase.co/functions/v1/send-push-notification',
+      headers := jsonb_build_object(
+        'Authorization', 'Bearer ' || current_setting('app.service_role_key', true),
+        'Content-Type', 'application/json'
+      ),
+      body := jsonb_build_object(
+        'id_usuario_destino', NEW.id_paciente,
+        'titulo', v_titulo,
+        'cuerpo', v_cuerpo,
+        'data', jsonb_build_object('id_cita', NEW.id_cita, 'estado', NEW.estado)
+      )
+    );
+  END IF;
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_cita_status_notify ON public.cita;
+CREATE TRIGGER on_cita_status_notify
+  AFTER UPDATE ON public.cita
+  FOR EACH ROW
+  EXECUTE FUNCTION public.notify_cita_status_change();
+
+
+-- ------------------------------------------------------------
 -- Función RPC opcional: historial con nombres de paciente y médico
 -- ------------------------------------------------------------
 -- Esta función devuelve el historial de citas con los nombres completos

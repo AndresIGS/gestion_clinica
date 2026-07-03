@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
+import 'dispositivo_service.dart';
 
 /// Servicio base para notificaciones push mediante Firebase Cloud Messaging.
 ///
@@ -36,10 +37,19 @@ class PushNotificationService {
         'Permiso de notificaciones: ${settings.authorizationStatus}',
       );
 
-      // Token del dispositivo. En producción deberías enviarlo a Supabase
-      // para asociarlo al usuario y enviar notificaciones segmentadas.
+      // Token del dispositivo. Se guarda en Supabase para enviar
+      // notificaciones push segmentadas por usuario.
       final token = await _messaging.getToken();
-      debugPrint('FCM Token: $token');
+      if (token != null) {
+        debugPrint('FCM Token: $token');
+        await DispositivoService.guardarToken(token);
+      }
+
+      // Si el token cambia (p. ej. reinstalación de la app), actualízalo.
+      _messaging.onTokenRefresh.listen((newToken) {
+        debugPrint('FCM Token refrescado: $newToken');
+        DispositivoService.guardarToken(newToken);
+      });
 
       // Maneja mensajes mientras la app está en primer plano.
       FirebaseMessaging.onMessage.listen((message) {

@@ -166,7 +166,7 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
                                   labelText: 'Paciente Destinatario',
                                   border: OutlineInputBorder(),
                                 ),
-                                value: _idPacienteSeleccionado,
+                                initialValue: _idPacienteSeleccionado,
                                 items: snapshot.data!.map((pac) {
                                   return DropdownMenuItem<String>(
                                     value: pac['id_usuario'],
@@ -191,7 +191,7 @@ class _AgendarCitaScreenState extends State<AgendarCitaScreen> {
                             labelText: 'Doctores Disponibles',
                             border: OutlineInputBorder(),
                           ),
-                          value: _idMedicoSeleccionado,
+                          initialValue: _idMedicoSeleccionado,
                           items: medicos.map((medico) {
                             return DropdownMenuItem<String>(
                               value: medico['id_medico'],

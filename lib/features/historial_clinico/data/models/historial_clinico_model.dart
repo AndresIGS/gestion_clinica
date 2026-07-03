@@ -8,6 +8,7 @@ class HistorialClinicoModel extends Equatable {
   final String diagnostico;
   final String tratamiento;
   final DateTime? fechaCreacion;
+  final List<String> adjuntos;
 
   const HistorialClinicoModel({
     this.idRegistro,
@@ -17,6 +18,7 @@ class HistorialClinicoModel extends Equatable {
     required this.diagnostico,
     required this.tratamiento,
     this.fechaCreacion,
+    this.adjuntos = const [],
   });
 
   factory HistorialClinicoModel.fromJson(Map<String, dynamic> json) {
@@ -30,6 +32,10 @@ class HistorialClinicoModel extends Equatable {
       fechaCreacion: json['fecha_creacion'] != null
           ? DateTime.parse(json['fecha_creacion'] as String)
           : null,
+      adjuntos: (json['adjuntos'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
   }
 
@@ -41,6 +47,7 @@ class HistorialClinicoModel extends Equatable {
       if (idCita != null) 'id_cita': idCita,
       'diagnostico': diagnostico,
       'tratamiento': tratamiento,
+      'adjuntos': adjuntos,
     };
   }
 
@@ -53,5 +60,6 @@ class HistorialClinicoModel extends Equatable {
         diagnostico,
         tratamiento,
         fechaCreacion,
+        adjuntos,
       ];
 }

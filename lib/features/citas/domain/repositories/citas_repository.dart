@@ -14,8 +14,24 @@ class CitasRepository {
     return await remoteDataSource.obtenerMedicosDisponibles();
   }
 
-  Future<List<CitaModel>> obtenerCitas(String idUsuario, int idRol) async {
-    return await remoteDataSource.obtenerCitas(idUsuario, idRol);
+  Future<List<CitaModel>> obtenerCitas(
+    String idUsuario,
+    int idRol, {
+    int limit = 20,
+    int offset = 0,
+    String? estado,
+    DateTime? fechaInicio,
+    DateTime? fechaFin,
+  }) async {
+    return await remoteDataSource.obtenerCitas(
+      idUsuario,
+      idRol,
+      limit: limit,
+      offset: offset,
+      estado: estado,
+      fechaInicio: fechaInicio,
+      fechaFin: fechaFin,
+    );
   }
 
   Future<void> actualizarEstadoCita(int idCita, String nuevoEstado) async {

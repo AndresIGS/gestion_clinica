@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/widgets/empty_state.dart';
+import '../../../../core/widgets/fade_in_wrapper.dart';
 import '../../../../features/auth/data/models/usuario_model.dart';
 import '../../../../features/citas/data/models/cita_model.dart';
 import '../../../../features/citas/presentation/blocs/citas/citas_bloc.dart';
@@ -12,6 +14,8 @@ import '../../../../features/notificaciones/presentation/blocs/notificaciones_ev
 import '../../../../features/notificaciones/presentation/blocs/notificaciones_state.dart';
 import '../../../../features/historial/presentation/pages/historial_citas_screen.dart';
 import '../../../../features/historial_clinico/presentation/pages/historial_clinico_paciente_screen.dart';
+import '../../../../features/horarios_medico/presentation/pages/horarios_medico_screen.dart';
+import '../../../../features/horarios_medico/presentation/pages/horarios_medicos_lista_screen.dart';
 import '../../../../features/perfil/presentation/pages/perfil_screen.dart';
 import 'register_screen.dart';
 import '../../../../features/reportes/presentation/pages/reportes_screen.dart';
@@ -114,6 +118,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
           icono: Icons.history,
           titulo: 'Historial',
           onTap: () => _irA(const HistorialCitasScreen()),
+        ),
+      );
+    }
+
+    if (widget.usuario.idRol == 3) {
+      accesos.add(
+        _AccesoRapido(
+          icono: Icons.schedule,
+          titulo: 'Mis Horarios',
+          onTap: () => _irA(HorariosMedicoScreen(idMedico: widget.usuario.idUsuario)),
+        ),
+      );
+    }
+
+    if (widget.usuario.idRol == 1 || widget.usuario.idRol == 2) {
+      accesos.add(
+        _AccesoRapido(
+          icono: Icons.edit_calendar,
+          titulo: 'Gestionar Horarios',
+          onTap: () => _irA(const HorariosMedicosListaScreen()),
         ),
       );
     }
@@ -272,15 +296,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
           childAspectRatio: 1.4,
-          children: accesos
-              .map(
-                (a) => _AccesoRapidoCard(
-                  icono: a.icono,
-                  titulo: a.titulo,
-                  onTap: a.onTap,
-                ),
-              )
-              .toList(),
+          children: accesos.asMap().entries.map((entry) {
+            final a = entry.value;
+            return FadeInWrapper(
+              delay: Duration(milliseconds: entry.key * 80),
+              child: _AccesoRapidoCard(
+                icono: a.icono,
+                titulo: a.titulo,
+                onTap: a.onTap,
+              ),
+            );
+          }).toList(),
         ),
       ],
     );
@@ -333,12 +359,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
               final proximas = _proximasCitas(state.citas);
 
               if (proximas.isEmpty) {
-                return const Card(
-                  child: Padding(
-                    padding: EdgeInsets.all(24),
-                    child: Center(
-                      child: Text('No tienes citas próximas programadas.'),
-                    ),
+                return Card(
+                  child: EmptyState(
+                    icono: Icons.event_available,
+                    titulo: 'Sin citas próximas',
+                    mensaje: widget.usuario.idRol == 4
+                        ? 'Agenda tu primera cita desde el panel.'
+                        : 'No tienes citas programadas para los próximos días.',
+                    accion: widget.usuario.idRol == 4
+                        ? FilledButton.icon(
+                            onPressed: () => _irA(
+                              AgendarCitaScreen(paciente: widget.usuario),
+                            ),
+                            icon: const Icon(Icons.add),
+                            label: const Text('Agendar'),
+                          )
+                        : null,
                   ),
                 );
               }

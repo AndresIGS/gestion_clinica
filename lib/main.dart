@@ -4,6 +4,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:sistemav2/features/citas/presentation/blocs/citas/citas_bloc.dart';
 import 'package:sistemav2/features/historial/presentation/blocs/historial_bloc.dart';
 import 'package:sistemav2/features/historial_clinico/presentation/blocs/historial_clinico_bloc.dart';
+import 'package:sistemav2/features/horarios_medico/presentation/blocs/horarios_medico_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'core/services/push_notification_service.dart';
@@ -51,6 +52,7 @@ class ClinicaApp extends StatelessWidget {
         BlocProvider(create: (_) => di.sl<CitasBloc>()),
         BlocProvider(create: (_) => di.sl<HistorialBloc>()),
         BlocProvider(create: (_) => di.sl<HistorialClinicoBloc>()),
+        BlocProvider(create: (_) => di.sl<HorariosMedicoBloc>()),
         BlocProvider(create: (_) => di.sl<NotificacionesBloc>()),
         BlocProvider(create: (_) => di.sl<PerfilBloc>()),
         BlocProvider(create: (_) => di.sl<ReportesBloc>()),

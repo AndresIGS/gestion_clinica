@@ -41,11 +41,21 @@ class CitasError extends CitasState {
 
 class CitasListadas extends CitasState {
   final List<CitaModel> citas;
+  final bool hayMas;
 
-  const CitasListadas({required this.citas});
+  const CitasListadas({required this.citas, this.hayMas = true});
 
   @override
-  List<Object?> get props => [citas];
+  List<Object?> get props => [citas, hayMas];
+}
+
+class CitasPaginando extends CitasState {
+  final List<CitaModel> citasActuales;
+
+  const CitasPaginando({required this.citasActuales});
+
+  @override
+  List<Object?> get props => [citasActuales];
 }
 
 class CitaEstadoActualizado extends CitasState {

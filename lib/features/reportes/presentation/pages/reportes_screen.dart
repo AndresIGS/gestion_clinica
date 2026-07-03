@@ -1,6 +1,8 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/widgets/fade_in_wrapper.dart';
+import '../../../../core/widgets/skeleton_list.dart';
 import '../blocs/reportes_bloc.dart';
 import '../blocs/reportes_event.dart';
 import '../blocs/reportes_state.dart';
@@ -88,30 +90,39 @@ class _ReportesScreenState extends State<ReportesScreen> {
           } else if (state is EstadisticasCargadas) {
             estadisticas = state.estadisticas;
           } else if (state is ReportesLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Padding(
+              padding: EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SkeletonCard(),
+                  SizedBox(height: 24),
+                  SkeletonCard(),
+                  SizedBox(height: 24),
+                  SkeletonCard(),
+                ],
+              ),
+            );
           }
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildFiltros(medicos),
-                const SizedBox(height: 24),
-                if (estadisticas != null) ...[
-                  _buildResumen(estadisticas),
+          return FadeInWrapper(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _buildFiltros(medicos),
                   const SizedBox(height: 24),
-                  _buildGrafico(estadisticas),
-                  const SizedBox(height: 24),
-                  _buildTabla(estadisticas),
-                ] else
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(24),
-                      child: CircularProgressIndicator(),
-                    ),
-                  ),
-              ],
+                  if (estadisticas != null) ...[
+                    _buildResumen(estadisticas),
+                    const SizedBox(height: 24),
+                    _buildGrafico(estadisticas),
+                    const SizedBox(height: 24),
+                    _buildTabla(estadisticas),
+                  ] else
+                    const SkeletonCard(),
+                ],
+              ),
             ),
           );
         },
