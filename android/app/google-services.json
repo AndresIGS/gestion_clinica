@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "941462602670",
+    "project_id": "gestion-clinica-1a287",
+    "storage_bucket": "gestion-clinica-1a287.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:941462602670:android:39e554dfcb69339f81fe3f",
+        "android_client_info": {
+          "package_name": "com.example.sistemav2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBrXg-KnxD3GbKzzMhUfceIN8cycOFElMc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

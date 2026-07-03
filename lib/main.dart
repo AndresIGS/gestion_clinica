@@ -7,7 +7,6 @@ import 'package:sistemav2/features/historial_clinico/presentation/blocs/historia
 import 'package:sistemav2/features/horarios_medico/presentation/blocs/horarios_medico_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'core/services/push_notification_service.dart';
 import 'core/theme/app_theme.dart';
 import 'injection_container.dart'
     as di; // Importamos la inyección de dependencias
@@ -23,9 +22,6 @@ Future<void> main() async {
   // Carga las variables de entorno según el ambiente
   final envFile = kDebugMode ? '.env.dev' : '.env.prod';
   await dotenv.load(fileName: envFile);
-
-  // Inicializa Firebase Cloud Messaging (requere configuración previa)
-  await PushNotificationService.initialize();
 
   // Inicializa la conexión con Supabase
   await Supabase.initialize(

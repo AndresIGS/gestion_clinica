@@ -3,8 +3,8 @@
   Verifica que el proyecto tenga la configuración mínima para ejecutarse.
 
 .DESCRIPTION
-  Revisa la existencia de archivos de entorno, configuración de Firebase
-  y assets necesarios. No modifica archivos.
+  Revisa la existencia de archivos de entorno y assets necesarios.
+  No modifica archivos.
 #>
 
 [CmdletBinding()]
@@ -39,9 +39,6 @@ Test-Requerido -Ruta ".env.dev" -Descripcion "Variables de entorno de desarrollo
 Test-Requerido -Ruta ".env.prod" -Descripcion "Variables de entorno de producción"
 Test-Requerido -Ruta "assets/animations/medical_anim.json" -Descripcion "Animación Lottie de login"
 
-Test-Opcional -Ruta "android/app/google-services.json" -Descripcion "Configuración Firebase Android"
-Test-Opcional -Ruta "ios/Runner/GoogleService-Info.plist" -Descripcion "Configuración Firebase iOS"
-
 Write-Host "`n=== Verificación de dependencias de Flutter ===`n" -ForegroundColor Cyan
 
 $pubspec = Get-Content "pubspec.yaml" -Raw
@@ -49,8 +46,6 @@ $dependencias = @(
     'supabase_flutter',
     'flutter_bloc',
     'get_it',
-    'firebase_core',
-    'firebase_messaging',
     'flutter_dotenv'
 )
 
