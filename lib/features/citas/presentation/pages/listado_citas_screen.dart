@@ -28,6 +28,8 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
   String? _estadoSeleccionado;
   DateTime? _fechaInicio;
   DateTime? _fechaFin;
+  final TextEditingController _busquedaController = TextEditingController();
+  String? _busqueda;
 
   @override
   void initState() {
@@ -39,6 +41,7 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _busquedaController.dispose();
     super.dispose();
   }
 
@@ -53,6 +56,7 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
           estado: _estadoSeleccionado,
           fechaInicio: _fechaInicio,
           fechaFin: _fechaFin,
+          busqueda: _busqueda,
         ));
   }
 
@@ -70,6 +74,7 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
           estado: _estadoSeleccionado,
           fechaInicio: _fechaInicio,
           fechaFin: _fechaFin,
+          busqueda: _busqueda,
         ));
   }
 
@@ -114,7 +119,16 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
       _estadoSeleccionado = null;
       _fechaInicio = null;
       _fechaFin = null;
+      _busqueda = null;
+      _busquedaController.clear();
     });
+    _cargarCitas();
+  }
+
+  void _aplicarBusqueda(String valor) {
+    final nuevo = valor.trim().isEmpty ? null : valor.trim();
+    if (nuevo == _busqueda) return;
+    setState(() => _busqueda = nuevo);
     _cargarCitas();
   }
 
@@ -211,7 +225,12 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Estado: ${cita.estado.toUpperCase()}'),
-                      if (cita.motivo != null) Text('Motivo: ${cita.motivo}'),
+                      if (cita.nombrePaciente != null)
+                        Text('Paciente: ${cita.nombrePaciente}'),
+                      if (cita.nombreMedico != null)
+                        Text('Médico: ${cita.nombreMedico}'),
+                      if (cita.motivo != null && cita.motivo!.isNotEmpty)
+                        Text('Motivo: ${cita.motivo}'),
                     ],
                   ),
                   trailing: _construirAcciones(cita),
@@ -237,6 +256,25 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _busquedaController,
+              decoration: InputDecoration(
+                labelText: 'Buscar por paciente, médico o motivo',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: _busquedaController.text.isNotEmpty
+                    ? IconButton(
+                        icon: const Icon(Icons.clear),
+                        onPressed: () {
+                          _busquedaController.clear();
+                          _aplicarBusqueda('');
+                        },
+                      )
+                    : null,
+              ),
+              textInputAction: TextInputAction.search,
+              onSubmitted: _aplicarBusqueda,
             ),
             const SizedBox(height: 12),
             DropdownButtonFormField<String?>(

@@ -67,6 +67,31 @@ void main() {
     );
 
     blocTest<CitasBloc, CitasState>(
+      'propaga término de búsqueda al repositorio',
+      build: () {
+        when(
+          () => citasRepository.obtenerCitas(
+            'pac-1',
+            4,
+            busqueda: 'Ana',
+          ),
+        ).thenAnswer((_) async => [cita]);
+        return bloc;
+      },
+      act: (bloc) => bloc.add(
+        const CargarCitasEvent(
+          idUsuario: 'pac-1',
+          idRol: 4,
+          busqueda: 'Ana',
+        ),
+      ),
+      expect: () => [
+        CitasLoading(),
+        CitasListadas(citas: [cita], hayMas: false),
+      ],
+    );
+
+    blocTest<CitasBloc, CitasState>(
       'emite [CitasLoading, CitaSolicitadaExito] al agendar cita',
       build: () {
         when(() => citasRepository.agendarCita(cita))

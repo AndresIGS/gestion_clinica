@@ -12,6 +12,7 @@ abstract class CitasRemoteDataSource {
     String? estado,
     DateTime? fechaInicio,
     DateTime? fechaFin,
+    String? busqueda,
   });
   Future<void> actualizarEstadoCita(int idCita, String nuevoEstado);
   Stream<List<Map<String, dynamic>>> escucharCambiosCitas();
@@ -142,8 +143,30 @@ class CitasRemoteDataSourceImpl implements CitasRemoteDataSource {
     String? estado,
     DateTime? fechaInicio,
     DateTime? fechaFin,
+    String? busqueda,
   }) async {
     try {
+      // Si hay búsqueda por texto usamos la función RPC que trae nombres
+      // y permite filtrar por paciente, médico o motivo.
+      if (busqueda != null && busqueda.trim().isNotEmpty) {
+        final response = await supabaseClient.rpc(
+          'obtener_citas_con_nombres',
+          params: {
+            'p_id_usuario': idUsuario,
+            'p_id_rol': idRol,
+            'p_estado': estado,
+            'p_fecha_inicio': fechaInicio?.toIso8601String(),
+            'p_fecha_fin': fechaFin
+                ?.add(const Duration(hours: 23, minutes: 59, seconds: 59))
+                .toIso8601String(),
+            'p_busqueda': busqueda.trim(),
+            'p_limit': limit,
+            'p_offset': offset,
+          },
+        );
+        return (response as List).map((json) => CitaModel.fromJson(json)).toList();
+      }
+
       var query = supabaseClient.from('cita').select();
 
       // Aplicar filtros según el rol localmente si fuera necesario,

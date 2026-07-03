@@ -51,6 +51,7 @@ class CitasBloc extends Bloc<CitasEvent, CitasState> {
           estado: event.estado,
           fechaInicio: event.fechaInicio,
           fechaFin: event.fechaFin,
+          busqueda: event.busqueda,
         );
 
         if (event.esPrimeraCarga) {

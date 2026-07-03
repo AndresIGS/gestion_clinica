@@ -22,6 +22,7 @@ class CitasRepository {
     String? estado,
     DateTime? fechaInicio,
     DateTime? fechaFin,
+    String? busqueda,
   }) async {
     return await remoteDataSource.obtenerCitas(
       idUsuario,
@@ -31,6 +32,7 @@ class CitasRepository {
       estado: estado,
       fechaInicio: fechaInicio,
       fechaFin: fechaFin,
+      busqueda: busqueda,
     );
   }
 

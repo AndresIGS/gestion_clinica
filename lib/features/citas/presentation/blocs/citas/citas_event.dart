@@ -28,6 +28,7 @@ class CargarCitasEvent extends CitasEvent {
   final String? estado;
   final DateTime? fechaInicio;
   final DateTime? fechaFin;
+  final String? busqueda;
 
   const CargarCitasEvent({
     required this.idUsuario,
@@ -38,6 +39,7 @@ class CargarCitasEvent extends CitasEvent {
     this.estado,
     this.fechaInicio,
     this.fechaFin,
+    this.busqueda,
   });
 
   @override
@@ -50,6 +52,7 @@ class CargarCitasEvent extends CitasEvent {
         estado,
         fechaInicio,
         fechaFin,
+        busqueda,
       ];
 }
 

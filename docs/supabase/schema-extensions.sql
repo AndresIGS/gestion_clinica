@@ -74,3 +74,68 @@ ADD COLUMN IF NOT EXISTS adjuntos text[] DEFAULT '{}'::text[];
 --       SELECT id_medico FROM public.medico
 --     )
 --   );
+
+
+-- ------------------------------------------------------------
+-- 4. Función RPC: búsqueda de citas con nombres
+-- ------------------------------------------------------------
+-- Permite buscar citas por nombre de paciente, médico o motivo,
+-- respetando los filtros de rol, estado y rango de fechas.
+-- ------------------------------------------------------------
+CREATE OR REPLACE FUNCTION public.obtener_citas_con_nombres(
+  p_id_usuario uuid,
+  p_id_rol int,
+  p_estado text DEFAULT NULL,
+  p_fecha_inicio timestamp with time zone DEFAULT NULL,
+  p_fecha_fin timestamp with time zone DEFAULT NULL,
+  p_busqueda text DEFAULT NULL,
+  p_limit int DEFAULT 20,
+  p_offset int DEFAULT 0
+)
+RETURNS TABLE(
+  id_cita int,
+  id_paciente uuid,
+  id_medico uuid,
+  fecha_hora timestamp with time zone,
+  fecha_hora_fin timestamp with time zone,
+  estado text,
+  motivo text,
+  nombre_paciente text,
+  nombre_medico text
+)
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT
+    c.id_cita,
+    c.id_paciente,
+    c.id_medico,
+    c.fecha_hora,
+    c.fecha_hora_fin,
+    c.estado::text,
+    c.motivo,
+    pu.nombre_completo AS nombre_paciente,
+    mu.nombre_completo AS nombre_medico
+  FROM public.cita c
+  JOIN public.paciente p ON p.id_paciente = c.id_paciente
+  JOIN public.usuario pu ON pu.id_usuario = p.id_paciente
+  JOIN public.medico m ON m.id_medico = c.id_medico
+  JOIN public.usuario mu ON mu.id_usuario = m.id_medico
+  WHERE
+    (
+      p_id_rol = 1 OR p_id_rol = 2 OR
+      (p_id_rol = 3 AND c.id_medico = p_id_usuario) OR
+      (p_id_rol = 4 AND c.id_paciente = p_id_usuario)
+    )
+    AND (p_estado IS NULL OR c.estado = p_estado)
+    AND (p_fecha_inicio IS NULL OR c.fecha_hora >= p_fecha_inicio)
+    AND (p_fecha_fin IS NULL OR c.fecha_hora <= p_fecha_fin)
+    AND (
+      p_busqueda IS NULL OR p_busqueda = '' OR
+      pu.nombre_completo ILIKE '%' || p_busqueda || '%' OR
+      mu.nombre_completo ILIKE '%' || p_busqueda || '%' OR
+      c.motivo ILIKE '%' || p_busqueda || '%'
+    )
+  ORDER BY c.fecha_hora DESC
+  LIMIT p_limit OFFSET p_offset;
+$$;
