@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/fade_in_wrapper.dart';
 import '../../../../features/auth/data/models/usuario_model.dart';
@@ -166,10 +167,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _irA(Widget pantalla) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => pantalla),
-    );
+    Navigator.push(context, AppRouter.slide(pantalla));
   }
 
   @override
@@ -187,10 +185,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             icon: const Icon(Icons.logout),
             onPressed: () {
               context.read<AuthBloc>().add(LogoutRequested());
-              Navigator.pushAndRemoveUntil(
+              AppRouter.navigateAndRemoveUntil(
                 context,
-                MaterialPageRoute(builder: (_) => const LoginScreen()),
-                (route) => false,
+                const LoginScreen(),
               );
             },
           ),

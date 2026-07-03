@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../../../core/widgets/empty_state.dart';
 import '../../../../core/widgets/skeleton_list.dart';
 import '../../../auth/data/models/usuario_model.dart';
@@ -142,8 +143,8 @@ class _ListadoCitasScreenState extends State<ListadoCitasScreen> {
   void _verHistorialClinico(CitaModel cita) {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (_) => HistorialClinicoCitaScreen(
+      AppRouter.slide(
+        HistorialClinicoCitaScreen(
           cita: cita,
           usuario: widget.usuario,
         ),

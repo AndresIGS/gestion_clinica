@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../../../../main.dart';
 import '../../data/models/usuario_model.dart';
 import 'dashboard_screen.dart';
@@ -31,10 +32,7 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (session == null) {
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
+        AppRouter.replace(context, const LoginScreen());
       }
       return;
     }
@@ -49,12 +47,7 @@ class _SplashScreenState extends State<SplashScreen> {
       final usuario = UsuarioModel.fromJson(userData);
 
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => DashboardScreen(usuario: usuario),
-          ),
-        );
+        AppRouter.replace(context, DashboardScreen(usuario: usuario));
       }
     } catch (e) {
       // Si falla la recuperación (p. ej. el usuario fue eliminado de la tabla),
@@ -62,10 +55,7 @@ class _SplashScreenState extends State<SplashScreen> {
       await Supabase.instance.client.auth.signOut();
 
       if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
+        AppRouter.replace(context, const LoginScreen());
       }
     }
   }

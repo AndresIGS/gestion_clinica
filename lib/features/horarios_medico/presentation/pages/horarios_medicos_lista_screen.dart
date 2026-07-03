@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../../../core/navigation/app_router.dart';
 import 'horarios_medico_screen.dart';
 
 class HorariosMedicosListaScreen extends StatefulWidget {
@@ -59,8 +60,8 @@ class _HorariosMedicosListaScreenState
                 onTap: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (_) => HorariosMedicoScreen(
+                    AppRouter.slide(
+                      HorariosMedicoScreen(
                         idMedico: medico['id_medico'] as String,
                         editable: true,
                       ),

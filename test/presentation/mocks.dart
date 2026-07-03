@@ -8,6 +8,9 @@ import 'package:sistemav2/features/citas/presentation/blocs/citas/citas_state.da
 import 'package:sistemav2/features/notificaciones/presentation/blocs/notificaciones_bloc.dart';
 import 'package:sistemav2/features/notificaciones/presentation/blocs/notificaciones_event.dart';
 import 'package:sistemav2/features/notificaciones/presentation/blocs/notificaciones_state.dart';
+import 'package:sistemav2/features/reportes/presentation/blocs/reportes_bloc.dart';
+import 'package:sistemav2/features/reportes/presentation/blocs/reportes_event.dart';
+import 'package:sistemav2/features/reportes/presentation/blocs/reportes_state.dart';
 
 class MockAuthBloc extends MockBloc<AuthEvent, AuthState> implements AuthBloc {}
 
@@ -16,3 +19,7 @@ class MockCitasBloc extends MockBloc<CitasEvent, CitasState> implements CitasBlo
 class MockNotificacionesBloc
     extends MockBloc<NotificacionesEvent, NotificacionesState>
     implements NotificacionesBloc {}
+
+class MockReportesBloc
+    extends MockBloc<ReportesEvent, ReportesState>
+    implements ReportesBloc {}

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../../../core/navigation/app_router.dart';
 import '../blocs/auth/auth_bloc.dart';
 import '../blocs/auth/auth_event.dart';
 import '../blocs/auth/auth_state.dart';
@@ -71,13 +72,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     );
 
-                    Navigator.pushAndRemoveUntil(
+                    AppRouter.navigateAndRemoveUntil(
                       context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            DashboardScreen(usuario: state.usuario),
-                      ),
-                      (route) => false,
+                      DashboardScreen(usuario: state.usuario),
                     );
                   }
                 }
@@ -170,9 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: () {
                               Navigator.push(
                                 context,
-                                MaterialPageRoute(
-                                  builder: (context) => const RegisterScreen(),
-                                ),
+                                AppRouter.slide(const RegisterScreen()),
                               );
                             },
                             child: const Text(

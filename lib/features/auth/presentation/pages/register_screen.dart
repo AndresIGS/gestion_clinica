@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:supabase_flutter/supabase_flutter.dart' hide AuthState;
+import '../../../../core/navigation/app_router.dart';
 import '../../../../main.dart';
 import '../../data/models/usuario_model.dart';
 import '../blocs/auth/auth_bloc.dart';
@@ -133,13 +134,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       );
 
                       if (_esRegistroPublico) {
-                        Navigator.pushAndRemoveUntil(
+                        AppRouter.navigateAndRemoveUntil(
                           context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                DashboardScreen(usuario: state.usuario),
-                          ),
-                          (route) => false,
+                          DashboardScreen(usuario: state.usuario),
                         );
                       } else {
                         Navigator.pop(context);

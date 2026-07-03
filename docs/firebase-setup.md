@@ -68,6 +68,19 @@ Ejecuta `docs/supabase/schema-extensions.sql` en el SQL Editor de Supabase.
 
 ### 6. Desplegar la Edge Function
 
+Puedes usar el script incluido (PowerShell o Bash) o los comandos manuales:
+
+**PowerShell:**
+```powershell
+.\scripts\deploy_edge_function.ps1 -ProjectId "tu-project-ref"
+```
+
+**Bash:**
+```bash
+bash scripts/deploy_edge_function.sh send-push-notification docs/supabase/edge-functions/send-push-notification.ts tu-project-ref
+```
+
+**Comandos manuales:**
 ```bash
 supabase functions new send-push-notification
 # Copia el contenido de docs/supabase/edge-functions/send-push-notification.ts

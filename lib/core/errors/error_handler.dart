@@ -27,20 +27,26 @@ class ErrorHandler {
         message.contains('timeout') ||
         message.contains('failed host lookup') ||
         message.contains('network') ||
-        message.contains('connection refused')) {
+        message.contains('connection refused') ||
+        message.contains('connection reset')) {
       return const NetworkFailure();
     }
 
     // Errores de autenticación de Supabase
     if (error is AuthException) {
-      return AuthFailure(_limpiarMensaje(error.message));
+      return _mapAuthException(error);
     }
 
     if (message.contains('invalid login credentials') ||
         message.contains('user not found') ||
         message.contains('email not confirmed') ||
-        message.contains('incorrect password')) {
-      return AuthFailure(_limpiarMensaje(error.toString()));
+        message.contains('incorrect password') ||
+        message.contains('invalid credentials')) {
+      return const AuthFailure('Correo o contraseña incorrectos.');
+    }
+
+    if (message.contains('session') && message.contains('expired')) {
+      return const AuthFailure('Tu sesión expiró. Inicia sesión de nuevo.');
     }
 
     // Errores de PostgreSQL / Supabase
@@ -64,8 +70,40 @@ class ErrorHandler {
       return ValidationFailure(_limpiarMensaje(error.toString()));
     }
 
+    if (message.contains('rate limit') || message.contains('too many requests')) {
+      return const ServerFailure('Demasiadas solicitudes. Espera un momento e inténtalo de nuevo.');
+    }
+
     // Fallback
     return const UnknownFailure();
+  }
+
+  static Failure _mapAuthException(AuthException error) {
+    final statusCode = error.statusCode;
+    final msg = _limpiarMensaje(error.message).toLowerCase();
+
+    if (statusCode == '400' ||
+        msg.contains('invalid login credentials') ||
+        msg.contains('invalid credentials')) {
+      return const AuthFailure('Correo o contraseña incorrectos.');
+    }
+
+    if (statusCode == '401' ||
+        msg.contains('jwt') ||
+        msg.contains('token') ||
+        msg.contains('session')) {
+      return const AuthFailure('Tu sesión expiró. Inicia sesión de nuevo.');
+    }
+
+    if (statusCode == '422' || msg.contains('email not confirmed')) {
+      return const AuthFailure('Tu correo aún no ha sido confirmado.');
+    }
+
+    if (statusCode == '429') {
+      return const ServerFailure('Demasiados intentos. Espera un momento.');
+    }
+
+    return AuthFailure(_limpiarMensaje(error.message));
   }
 
   static Failure _mapPostgrestException(PostgrestException error) {
